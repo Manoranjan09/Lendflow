@@ -14,6 +14,7 @@ import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardLoansRouteImport } from './routes/dashboard.loans'
 import { Route as DashboardBorrowersRouteImport } from './routes/dashboard.borrowers'
 import { Route as DashboardAssistantRouteImport } from './routes/dashboard.assistant'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
@@ -43,6 +44,11 @@ const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardLoansRoute = DashboardLoansRouteImport.update({
+  id: '/loans',
+  path: '/loans',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardBorrowersRoute = DashboardBorrowersRouteImport.update({
   id: '/borrowers',
   path: '/borrowers',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/assistant': typeof DashboardAssistantRoute
   '/dashboard/borrowers': typeof DashboardBorrowersRoute
+  '/dashboard/loans': typeof DashboardLoansRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/assistant': typeof DashboardAssistantRoute
   '/dashboard/borrowers': typeof DashboardBorrowersRoute
+  '/dashboard/loans': typeof DashboardLoansRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard': typeof DashboardIndexRoute
 }
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/assistant': typeof DashboardAssistantRoute
   '/dashboard/borrowers': typeof DashboardBorrowersRoute
+  '/dashboard/loans': typeof DashboardLoansRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/assistant'
     | '/dashboard/borrowers'
+    | '/dashboard/loans'
     | '/dashboard/settings'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/assistant'
     | '/dashboard/borrowers'
+    | '/dashboard/loans'
     | '/dashboard/settings'
     | '/dashboard'
   id:
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/assistant'
     | '/dashboard/borrowers'
+    | '/dashboard/loans'
     | '/dashboard/settings'
     | '/dashboard/'
   fileRoutesById: FileRoutesById
@@ -164,6 +176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSettingsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/loans': {
+      id: '/dashboard/loans'
+      path: '/loans'
+      fullPath: '/dashboard/loans'
+      preLoaderRoute: typeof DashboardLoansRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/borrowers': {
       id: '/dashboard/borrowers'
       path: '/borrowers'
@@ -192,6 +211,7 @@ interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
   DashboardAssistantRoute: typeof DashboardAssistantRoute
   DashboardBorrowersRoute: typeof DashboardBorrowersRoute
+  DashboardLoansRoute: typeof DashboardLoansRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
@@ -200,6 +220,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
   DashboardAssistantRoute: DashboardAssistantRoute,
   DashboardBorrowersRoute: DashboardBorrowersRoute,
+  DashboardLoansRoute: DashboardLoansRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }

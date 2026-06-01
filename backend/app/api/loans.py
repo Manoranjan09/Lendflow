@@ -1,26 +1,27 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.models.loan import Loan
-from app.schemas.loan import LoanCreate
-from app.core.dependencies import get_current_user
 from app.models.repayment import Repayment
+from app.schemas.loan import LoanCreate
+
 from app.services.loan_calculator import (
     calculate_simple_interest,
     calculate_compound_interest
 )
+
 from app.services.loan_status import get_loan_status
-from datetime import date
+
 router = APIRouter(
     prefix="/loans",
     tags=["Loans"]
 )
 
+
 @router.post("/")
 def create_loan(
     data: LoanCreate,
-    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     loan = Loan(
@@ -39,15 +40,17 @@ def create_loan(
 
     return loan
 
+
 @router.get("/")
 def get_loans(
     db: Session = Depends(get_db)
 ):
     return db.query(Loan).all()
+
+
 @router.get("/{loan_id}/summary")
 def loan_summary(
     loan_id: int,
-    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     loan = (
@@ -57,9 +60,10 @@ def loan_summary(
     )
 
     if not loan:
-        return {
-            "error": "Loan not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Loan not found"
+        )
 
     months = (
         (loan.due_date.year - loan.issue_date.year) * 12
@@ -68,17 +72,17 @@ def loan_summary(
     )
 
     if loan.is_compound:
-     result = calculate_compound_interest(
-        loan.principal_amount,
-        loan.interest_rate,
-        months
-    )
+        result = calculate_compound_interest(
+            loan.principal_amount,
+            loan.interest_rate,
+            months
+        )
     else:
-     result = calculate_simple_interest(
-        loan.principal_amount,
-        loan.interest_rate,
-        months
-    )
+        result = calculate_simple_interest(
+            loan.principal_amount,
+            loan.interest_rate,
+            months
+        )
 
     repayments = (
         db.query(Repayment)
@@ -97,16 +101,84 @@ def loan_summary(
         result["total_due"]
         - total_paid
     )
+
     status = get_loan_status(
-    outstanding,
-    loan.due_date
-)
+        outstanding,
+        loan.due_date
+    )
+
     return {
-    "loan_id": loan.id,
-    "principal": loan.principal_amount,
-    "interest": result["interest"],
-    "total_due": result["total_due"],
-    "paid": total_paid,
-    "outstanding": outstanding,
-    "status": status
-}
+        "loan_id": loan.id,
+        "principal": loan.principal_amount,
+        "interest": result["interest"],
+        "total_due": result["total_due"],
+        "paid": total_paid,
+        "outstanding": outstanding,
+        "status": status
+    }
+
+
+@router.get("/{loan_id}")
+def get_single_loan(
+    loan_id: int,
+    db: Session = Depends(get_db)
+):
+    loan = (
+        db.query(Loan)
+        .filter(Loan.id == loan_id)
+        .first()
+    )
+
+    if not loan:
+        raise HTTPException(
+            status_code=404,
+            detail="Loan not found"
+        )
+
+    return loan
+@router.delete("/{loan_id}")
+def delete_loan(
+    loan_id: int,
+    db: Session = Depends(get_db)
+):
+    loan = (
+        db.query(Loan)
+        .filter(Loan.id == loan_id)
+        .first()
+    )
+
+    if not loan:
+        raise HTTPException(
+            status_code=404,
+            detail="Loan not found"
+        )
+
+    db.delete(loan)
+    db.commit()
+
+    return {
+        "message": "Loan deleted"
+    }
+@router.delete("/{loan_id}")
+def delete_loan(
+    loan_id: int,
+    db: Session = Depends(get_db)
+):
+    loan = (
+        db.query(Loan)
+        .filter(Loan.id == loan_id)
+        .first()
+    )
+
+    if not loan:
+        raise HTTPException(
+            status_code=404,
+            detail="Loan not found"
+        )
+
+    db.delete(loan)
+    db.commit()
+
+    return {
+        "message": "Loan deleted successfully"
+    }

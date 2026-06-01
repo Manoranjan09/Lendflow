@@ -14,7 +14,7 @@ router = APIRouter(
 @router.post("/")
 def create_repayment(
     data: RepaymentCreate,
-    current_user = Depends(get_current_user),
+    #current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     repayment = Repayment(
@@ -33,7 +33,31 @@ def create_repayment(
 
 @router.get("/")
 def get_repayments(
-    current_user = Depends(get_current_user),
+    #current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     return db.query(Repayment).all()
+@router.get("/loan/{loan_id}")
+def get_loan_repayments(
+    loan_id: int,
+    db: Session = Depends(get_db)
+):
+    return (
+        db.query(Repayment)
+        .filter(
+            Repayment.loan_id == loan_id
+        )
+        .all()
+    )
+@router.get("/loan/{loan_id}")
+def get_loan_repayments(
+    loan_id: int,
+    db: Session = Depends(get_db)
+):
+    return (
+        db.query(Repayment)
+        .filter(
+            Repayment.loan_id == loan_id
+        )
+        .all()
+    )

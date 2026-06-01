@@ -6,25 +6,18 @@ from app.db.database import get_db
 from app.models.borrower import Borrower
 from app.models.loan import Loan
 from app.models.repayment import Repayment
-from app.core.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/dashboard",
     tags=["Dashboard"]
 )
 
+
 @router.get("/stats")
 def dashboard_stats(
-    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    user_id = current_user["user_id"]
-
-    total_borrowers = (
-        db.query(Borrower)
-        .filter(Borrower.lender_id == user_id)
-        .count()
-    )
+    total_borrowers = db.query(Borrower).count()
 
     loans = db.query(Loan).all()
 
@@ -72,4 +65,65 @@ def dashboard_stats(
         "total_lent": total_lent,
         "total_collected": total_collected,
         "outstanding_balance": outstanding_balance
+    }
+
+
+@router.get("/analytics")
+def analytics_data(
+    db: Session = Depends(get_db)
+):
+    loans = db.query(Loan).all()
+
+    portfolio_status = [
+        {
+            "name": "ACTIVE",
+            "value": sum(
+                1 for loan in loans
+                if loan.status == "ACTIVE"
+            )
+        },
+        {
+            "name": "OVERDUE",
+            "value": sum(
+                1 for loan in loans
+                if loan.status == "OVERDUE"
+            )
+        },
+        {
+            "name": "PAID",
+            "value": sum(
+                1 for loan in loans
+                if loan.status == "PAID"
+            )
+        }
+    ]
+
+    top_exposure = []
+
+    for loan in loans:
+        borrower = (
+            db.query(Borrower)
+            .filter(
+                Borrower.id == loan.borrower_id
+            )
+            .first()
+        )
+
+        top_exposure.append({
+            "borrower": borrower.name if borrower else f"#{loan.borrower_id}",
+            "exposure": loan.principal_amount,
+            "status": loan.status
+        })
+
+    top_exposure.sort(
+        key=lambda x: x["exposure"],
+        reverse=True
+    )
+
+    risky_accounts = top_exposure[:5]
+
+    return {
+        "portfolio_status": portfolio_status,
+        "top_exposure": top_exposure[:5],
+        "risky_accounts": risky_accounts
     }

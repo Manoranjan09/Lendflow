@@ -5,7 +5,8 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { borrowers, fmtINR, statusColor, totalDue } from "@/lib/loan-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
+import { useQuery } from "@tanstack/react-query";
+import { getDashboardStats } from "@/lib/api/dashboard";
 export const Route = createFileRoute("/dashboard/")({
   component: Overview,
 });
@@ -26,10 +27,11 @@ const monthly = [
 ];
 
 function Overview() {
-  const totalLent = borrowers.reduce((s, b) => s + b.principal, 0);
-  const recovered = borrowers.reduce((s, b) => s + b.paid, 0);
-  const pending = borrowers.reduce((s, b) => s + Math.max(totalDue(b) - b.paid, 0), 0);
-  const overdue = borrowers.filter((b) => b.status === "Overdue" || b.status === "High Risk").length;
+  const { data: stats } = useQuery({ queryKey: ["dashboard-stats"], queryFn: getDashboardStats });
+  const totalLent = stats?.total_lent ?? 0;
+  const recovered = stats?.total_collected ?? 0;
+  const pending = stats?.outstanding_balance ?? 0;
+  const overdue = stats?.overdue_loans ?? 0;
 
   const kpis = [
     { l: "Total lent", v: fmtINR(totalLent), icon: Wallet, trend: "+12.4%" },

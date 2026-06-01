@@ -4,13 +4,19 @@ import { motion } from "motion/react";
 import { Bot, Send, Sparkles, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { borrowers, fmtINR, totalDue } from "@/lib/loan-data";
+import { useMutation } from "@tanstack/react-query";
+import { chatWithAssistant } from "@/lib/api/assistant";
 
-export const Route = createFileRoute("/dashboard/assistant")({
+export const Route = createFileRoute(
+  "/dashboard/assistant"
+)({
   component: Assistant,
 });
 
-type Msg = { role: "user" | "ai"; text: string };
+type Msg = {
+  role: "user" | "ai";
+  text: string;
+};
 
 const SUGGESTIONS = [
   "How much profit did I make this month?",
@@ -19,86 +25,152 @@ const SUGGESTIONS = [
   "Predict next month's collections",
 ];
 
-function answer(q: string): string {
-  const lower = q.toLowerCase();
-  if (lower.includes("overdue")) {
-    const od = borrowers.filter((b) => b.status === "Overdue" || b.status === "High Risk");
-    return `You currently have ${od.length} overdue/high-risk borrowers: ${od.map((b) => b.name).join(", ")}. Total exposure: ${fmtINR(od.reduce((s, b) => s + Math.max(totalDue(b) - b.paid, 0), 0))}.`;
-  }
-  if (lower.includes("profit") || lower.includes("earn")) {
-    const total = borrowers.reduce((s, b) => s + Math.max(totalDue(b) - b.principal, 0), 0);
-    return `Estimated interest profit accumulated across your active portfolio is ${fmtINR(total)}. This month's projected profit is around ${fmtINR(146000)}.`;
-  }
-  if (lower.includes("compound")) {
-    const c = borrowers.filter((b) => b.interestType === "Compound");
-    const sum = c.reduce((s, b) => s + Math.max(totalDue(b) - b.principal, 0), 0);
-    return `${c.length} loans are on compound interest, contributing ~${fmtINR(sum)} in accrued interest so far.`;
-  }
-  if (lower.includes("predict") || lower.includes("next")) {
-    return `Based on repayment velocity and seasonality, expected collections next month are between ${fmtINR(380000)} and ${fmtINR(460000)}. Two accounts (BR-1043, BR-1045) are likely to delay.`;
-  }
-  return `I can help with profit, overdue tracking, compound interest, repayment predictions and borrower risk. Try one of the suggestions below.`;
-}
-
 function Assistant() {
-  const [messages, setMessages] = useState<Msg[]>([
-    { role: "ai", text: "Hi Arjun 👋  I'm your CreditFlow AI. Ask me anything about your lending portfolio." },
-  ]);
-  const [input, setInput] = useState("");
+  const [messages, setMessages] =
+    useState<Msg[]>([
+      {
+        role: "ai",
+        text:
+          "Welcome to CreditFlow AI 👋. I can help you analyze borrowers, loans, repayments, interest, profit, overdue accounts, and portfolio risk.",
+      },
+    ]);
 
-  function send(text: string) {
+  const [input, setInput] =
+    useState("");
+
+  const chatMutation =
+    useMutation({
+      mutationFn: chatWithAssistant,
+    });
+
+  async function send(
+    text: string
+  ) {
     const q = text.trim();
+
     if (!q) return;
-    setMessages((m) => [...m, { role: "user", text: q }, { role: "ai", text: answer(q) }]);
+
+    setMessages((m) => [
+      ...m,
+      {
+        role: "user",
+        text: q,
+      },
+    ]);
+
     setInput("");
+
+    try {
+      const response: any =
+        await chatMutation.mutateAsync(
+          q
+        );
+
+      setMessages((m) => [
+        ...m,
+        {
+          role: "ai",
+          text:
+            response.answer ??
+            "No response received.",
+        },
+      ]);
+    } catch {
+      setMessages((m) => [
+        ...m,
+        {
+          role: "ai",
+          text:
+            "Sorry, I couldn't process that request.",
+        },
+      ]);
+    }
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-9rem)] max-w-3xl flex-col">
+    <div className="mx-auto flex h-[calc(100vh-9rem)] max-w-4xl flex-col">
       <div className="mb-4 flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-primary to-accent glow">
+        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-primary to-accent">
           <Sparkles className="h-5 w-5 text-primary-foreground" />
         </div>
+
         <div>
-          <h1 className="font-display text-2xl font-semibold">AI Assistant</h1>
-          <p className="text-xs text-muted-foreground">Conversational finance copilot</p>
+          <h1 className="font-display text-2xl font-semibold">
+            AI Assistant
+          </h1>
+
+          <p className="text-xs text-muted-foreground">
+            Conversational finance copilot
+          </p>
         </div>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
-        {messages.map((m, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`flex gap-3 ${m.role === "user" ? "justify-end" : ""}`}
-          >
-            {m.role === "ai" && (
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent">
+      <div className="flex-1 overflow-y-auto rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
+        <div className="space-y-4">
+          {messages.map(
+            (m, i) => (
+              <motion.div
+                key={i}
+                initial={{
+                  opacity: 0,
+                  y: 6,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                className={`flex gap-3 ${
+                  m.role === "user"
+                    ? "justify-end"
+                    : ""
+                }`}
+              >
+                {m.role === "ai" && (
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent">
+                    <Bot className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                )}
+
+                <div
+                  className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                    m.role === "user"
+                      ? "bg-gradient-to-br from-primary to-accent text-primary-foreground"
+                      : "border border-border/60 bg-background/60"
+                  }`}
+                >
+                  {m.text}
+                </div>
+
+                {m.role === "user" && (
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-secondary">
+                    <User className="h-4 w-4" />
+                  </div>
+                )}
+              </motion.div>
+            )
+          )}
+
+          {chatMutation.isPending && (
+            <div className="flex gap-3">
+              <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent">
                 <Bot className="h-4 w-4 text-primary-foreground" />
               </div>
-            )}
-            <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
-              m.role === "user"
-                ? "bg-gradient-to-br from-primary to-accent text-primary-foreground"
-                : "border border-border/60 bg-background/60"
-            }`}>
-              {m.text}
-            </div>
-            {m.role === "user" && (
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-secondary">
-                <User className="h-4 w-4" />
+
+              <div className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3 text-sm">
+                Thinking...
               </div>
-            )}
-          </motion.div>
-        ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         {SUGGESTIONS.map((s) => (
           <button
             key={s}
-            onClick={() => send(s)}
+            onClick={() =>
+              send(s)
+            }
             className="rounded-full border border-border/60 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground"
           >
             {s}
@@ -107,11 +179,31 @@ function Assistant() {
       </div>
 
       <form
-        onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="mt-3 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          send(input);
+        }}
+        className="mt-4 flex gap-2"
       >
-        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about profits, overdue borrowers, predictions…" className="h-12" />
-        <Button type="submit" size="lg" className="bg-gradient-to-r from-primary to-accent text-primary-foreground glow">
+        <Input
+          value={input}
+          onChange={(e) =>
+            setInput(
+              e.target.value
+            )
+          }
+          placeholder="Ask about profits, overdue borrowers, repayments..."
+          className="h-12"
+        />
+
+        <Button
+          type="submit"
+          size="lg"
+          disabled={
+            chatMutation.isPending
+          }
+          className="bg-gradient-to-r from-primary to-accent text-primary-foreground"
+        >
           <Send className="h-4 w-4" />
         </Button>
       </form>
