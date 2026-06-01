@@ -2,32 +2,37 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { ArrowUpRight, IndianRupee, TrendingUp, AlertTriangle, Wallet, Bot, Plus } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar } from "recharts";
-import { borrowers, fmtINR, statusColor, totalDue } from "@/lib/loan-data";
+import { fmtINR } from "@/lib/loan-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { getDashboardStats } from "@/lib/api/dashboard";
+import {
+  getDashboardStats,
+  getDashboardInsights,
+  getRecentBorrowers,
+  getWeeklyRepayments,
+  getMonthlyTrend,
+  getDashboardAlerts,
+} from "@/lib/api/dashboard";
+
 export const Route = createFileRoute("/dashboard/")({
   component: Overview,
 });
 
-const monthly = [
-  { m: "Jan", profit: 42000, lent: 180000 },
-  { m: "Feb", profit: 51000, lent: 220000 },
-  { m: "Mar", profit: 48000, lent: 200000 },
-  { m: "Apr", profit: 63000, lent: 260000 },
-  { m: "May", profit: 71000, lent: 290000 },
-  { m: "Jun", profit: 82000, lent: 340000 },
-  { m: "Jul", profit: 78000, lent: 320000 },
-  { m: "Aug", profit: 91000, lent: 360000 },
-  { m: "Sep", profit: 102000, lent: 410000 },
-  { m: "Oct", profit: 96000, lent: 390000 },
-  { m: "Nov", profit: 118000, lent: 460000 },
-  { m: "Dec", profit: 134000, lent: 510000 },
-];
-
 function Overview() {
   const { data: stats } = useQuery({ queryKey: ["dashboard-stats"], queryFn: getDashboardStats });
+  const {
+  data: insights,
+} = useQuery({
+  queryKey: ["dashboard-insights"],
+  queryFn: getDashboardInsights,
+});
+  const {
+  data: recentBorrowers = [],
+} = useQuery({
+  queryKey: ["recent-borrowers"],
+  queryFn: getRecentBorrowers,
+});
   const totalLent = stats?.total_lent ?? 0;
   const recovered = stats?.total_collected ?? 0;
   const pending = stats?.outstanding_balance ?? 0;
@@ -39,7 +44,30 @@ function Overview() {
     { l: "Pending", v: fmtINR(pending), icon: IndianRupee, trend: "-3.2%" },
     { l: "Overdue accounts", v: String(overdue), icon: AlertTriangle, trend: "Review" },
   ];
-
+  const {
+  data: monthlyTrend = [],
+} = useQuery({
+  queryKey: [
+    "monthly-trend"
+  ],
+  queryFn:
+    getMonthlyTrend,
+});
+const {
+  data: weeklyRepayments = [],
+} = useQuery({
+  queryKey: [
+    "weekly-repayments"
+  ],
+  queryFn:
+    getWeeklyRepayments,
+});
+const {
+  data: alerts = [],
+} = useQuery({
+  queryKey: ["alerts"],
+  queryFn: getDashboardAlerts,
+});
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -84,7 +112,7 @@ function Overview() {
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthly}>
+              <AreaChart data={monthlyTrend}>
                 <defs>
                   <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="oklch(0.78 0.18 158)" stopOpacity={0.6} />
@@ -109,28 +137,87 @@ function Overview() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 to-accent/10 p-5">
-          <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent glow">
-              <Bot className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <div className="font-display font-semibold">AI insights</div>
+<div className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 to-accent/10 p-5">
+  <div className="flex items-center gap-2">
+    <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent glow">
+      <Bot className="h-4 w-4 text-primary-foreground" />
+    </div>
+
+    <div className="font-display font-semibold">
+      AI Insights
+    </div>
+  </div>
+
+  <ul className="mt-4 space-y-3 text-sm">
+    <li className="rounded-xl border border-border/60 bg-background/50 p-3">
+      ⚠ Overdue Loans:
+      <b>
+        {" "}
+        {insights?.overdue_loans ?? 0}
+      </b>
+    </li>
+
+    <li className="rounded-xl border border-border/60 bg-background/50 p-3">
+      💰 Outstanding Amount:
+      <b>
+        {" "}
+        ₹{Number(
+          insights?.outstanding ?? 0
+        ).toLocaleString()}
+      </b>
+    </li>
+
+    <li className="rounded-xl border border-border/60 bg-background/50 p-3">
+      ✅ Total Collected:
+      <b>
+        {" "}
+        ₹{Number(
+          insights?.total_collected ?? 0
+        ).toLocaleString()}
+      </b>
+    </li>
+  </ul>
+
+  <Button
+    asChild
+    variant="outline"
+    className="mt-5 w-full border-primary/40"
+  >
+    <Link to="/dashboard/assistant">
+      Ask AI Assistant
+      <ArrowUpRight className="ml-1 h-4 w-4" />
+    </Link>
+  </Button>
+</div>
+<div className="rounded-2xl border border-border/60 bg-card/70 p-5">
+  <div className="font-display text-base font-semibold">
+    Due & Overdue Alerts
+  </div>
+
+  <div className="mt-4 space-y-3">
+    {alerts.length === 0 ? (
+      <div className="text-sm text-muted-foreground">
+        No alerts
+      </div>
+    ) : (
+      alerts.map(
+        (
+          alert: any,
+          index: number
+        ) => (
+          <div
+            key={index}
+            className="rounded-xl border border-border/60 p-3"
+          >
+            {alert.type === "OVERDUE"
+              ? `⚠ ${alert.borrower} overdue by ${alert.days} days`
+              : `📅 ${alert.borrower} due in ${alert.days} days`}
           </div>
-          <ul className="mt-4 space-y-3 text-sm">
-            <li className="rounded-xl border border-border/60 bg-background/50 p-3">
-              <span className="text-primary">●</span> Rohan Mehta is 14 days overdue. Suggested action: send WhatsApp reminder.
-            </li>
-            <li className="rounded-xl border border-border/60 bg-background/50 p-3">
-              <span className="text-warning">●</span> Aman Verma flagged as <b>High Risk</b>. Consider restructuring loan.
-            </li>
-            <li className="rounded-xl border border-border/60 bg-background/50 p-3">
-              <span className="text-accent">●</span> Projected next‑month profit: <b className="text-gradient">{fmtINR(146000)}</b>.
-            </li>
-          </ul>
-          <Button asChild variant="outline" className="mt-5 w-full border-primary/40">
-            <Link to="/dashboard/assistant">Ask AI Assistant <ArrowUpRight className="ml-1 h-4 w-4" /></Link>
-          </Button>
-        </div>
+        )
+      )
+    )}
+  </div>
+</div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -140,31 +227,63 @@ function Overview() {
             <Button asChild variant="ghost" size="sm"><Link to="/dashboard/borrowers">View all</Link></Button>
           </div>
           <div className="overflow-hidden rounded-xl border border-border/60">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary/40 text-xs uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 text-left">Borrower</th>
-                  <th className="px-4 py-3 text-right">Principal</th>
-                  <th className="px-4 py-3 text-right">Due</th>
-                  <th className="px-4 py-3 text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {borrowers.slice(0, 5).map((b) => (
-                  <tr key={b.id} className="border-t border-border/40 transition hover:bg-secondary/30">
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{b.name}</div>
-                      <div className="text-xs text-muted-foreground">{b.id} · {b.interestType} @ {b.rate}%</div>
-                    </td>
-                    <td className="px-4 py-3 text-right">{fmtINR(b.principal)}</td>
-                    <td className="px-4 py-3 text-right">{fmtINR(totalDue(b) - b.paid)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <Badge variant="outline" className={statusColor[b.status]}>{b.status}</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+<table className="w-full text-sm">
+  <thead className="bg-secondary/40 text-xs uppercase tracking-wider text-muted-foreground">
+    <tr>
+      <th className="px-4 py-3 text-left">
+        Borrower
+      </th>
+
+      <th className="px-4 py-3 text-right">
+        Principal
+      </th>
+
+      <th className="px-4 py-3 text-right">
+        Due
+      </th>
+
+      <th className="px-4 py-3 text-right">
+        Status
+      </th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {recentBorrowers.map((b: any) => (
+      <tr
+        key={b.id}
+        className="border-t border-border/40 transition hover:bg-secondary/30"
+      >
+        <td className="px-4 py-3">
+          <div className="font-medium">
+            {b.name}
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            ID #{b.id}
+          </div>
+        </td>
+
+        <td className="px-4 py-3 text-right">
+          {fmtINR(b.principal ?? 0)}
+        </td>
+
+        <td className="px-4 py-3 text-right">
+          {fmtINR(b.due ?? 0)}
+        </td>
+
+        <td className="px-4 py-3 text-right">
+          <Badge variant="outline">
+            {b.status ?? "ACTIVE"}
+          </Badge>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+
           </div>
         </div>
 
@@ -172,10 +291,9 @@ function Overview() {
           <div className="font-display text-base font-semibold">Repayments this week</div>
           <div className="mt-4 h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[
-                { d: "Mon", v: 22 }, { d: "Tue", v: 38 }, { d: "Wed", v: 18 },
-                { d: "Thu", v: 52 }, { d: "Fri", v: 46 }, { d: "Sat", v: 64 }, { d: "Sun", v: 30 },
-              ]}>
+              <BarChart
+  data={weeklyRepayments}
+>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.30 0.03 252 / 0.5)" />
                 <XAxis dataKey="d" stroke="oklch(0.70 0.02 250)" fontSize={12} />
                 <YAxis stroke="oklch(0.70 0.02 250)" fontSize={12} />
