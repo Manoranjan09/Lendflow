@@ -1,7 +1,13 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Users, Calculator, BarChart3, Bot, Settings, Sparkles, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
-
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getNotifications,
+  generateReminder,
+} from "@/lib/api/dashboard";
+import { Button } from "@/components/ui/button";
 const nav = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { to: "/dashboard/borrowers", label: "Borrowers", icon: Users },
@@ -13,8 +19,36 @@ const nav = [
 ] as const;
 
 export function DashboardShell() {
-  const path = useRouterState({ select: (s) => s.location.pathname });
+  const path = useRouterState({
+    select: (s) => s.location.pathname,
+  });
 
+  const [showNotifications, setShowNotifications] =
+    useState(false);
+    const user = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
+
+const lenderId =
+  user?.dbUser?.id;
+const [reminderText, setReminderText] =
+  useState("");
+  const {
+  data: notifications = [],
+} = useQuery({
+  queryKey: [
+    "notifications",
+    lenderId,
+  ],
+
+  queryFn: () =>
+    getNotifications(
+      lenderId
+    ),
+
+  enabled:
+    !!lenderId,
+});
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl md:flex md:flex-col">
@@ -56,13 +90,153 @@ export function DashboardShell() {
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/50 bg-background/60 px-6 backdrop-blur-xl">
           <div>
             <div className="text-xs uppercase tracking-widest text-muted-foreground">Lender workspace</div>
-            <div className="font-display text-base font-semibold">Welcome back, Arjun</div>
+            <div className="font-display text-base font-semibold">Welcome back</div>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-card hover:bg-secondary transition">
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
-            </button>
+          <div className="relative flex items-center gap-3">
+           <button
+  onClick={() =>
+    setShowNotifications(
+      !showNotifications
+    )
+  }
+  className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-card hover:bg-secondary transition"
+>
+  <Bell className="h-4 w-4" />
+
+  {notifications.length > 0 && (
+    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+      {notifications.length}
+    </span>
+  )}
+</button>
+
+{showNotifications && (
+  <div className="absolute right-0 top-12 w-80 rounded-xl border border-border bg-card p-3 shadow-xl z-50">
+
+    <div className="mb-3 font-semibold">
+      Notifications
+    </div>
+
+    {notifications.length === 0 ? (
+      <div className="text-sm text-muted-foreground">
+        No notifications
+      </div>
+    ) : (
+  notifications.map(
+  (n: any, i: number) => {
+
+    console.log("Notification Data:", n);
+
+    return (
+      <div
+        key={i}
+        className="mb-2 rounded-lg border p-3 text-sm"
+      >
+        <div>
+          {n.message}
+        </div>
+
+        <Button
+          size="sm"
+          className="mt-2"
+          onClick={async () => {
+            const response: any =
+              await generateReminder(
+                n.message.split(" overdue")[0]
+              );
+
+            setReminderText(
+              response.message
+            );
+          }}
+        >
+          Generate Reminder
+        </Button>
+
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-2 ml-2"
+          onClick={() => {
+
+            console.log(
+              "WhatsApp Data:",
+              n
+            );
+
+            const message =
+              `Hello ${n.borrower},
+
+This is a reminder that your loan payment is overdue by ${n.days} day(s).
+
+Kindly clear the outstanding amount at the earliest.
+
+Thank you.`;
+
+            const whatsappUrl =
+              `https://wa.me/91${n.phone}?text=${encodeURIComponent(message)}`;
+
+            console.log(
+              "WhatsApp URL:",
+              whatsappUrl
+            );
+
+            window.open(
+              whatsappUrl,
+              "_blank"
+            );
+          }}
+        >
+          WhatsApp
+        </Button>
+
+      </div>
+    );
+  }
+)
+    )}
+  </div>
+)}
+{reminderText && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+
+    <div className="w-[500px] rounded-xl bg-card p-5 shadow-xl">
+
+      <div className="mb-3 text-lg font-semibold">
+        WhatsApp Reminder
+      </div>
+
+      <textarea
+        readOnly
+        value={reminderText}
+        className="h-48 w-full rounded-lg border p-3"
+      />
+
+      <div className="mt-3 flex gap-2">
+
+        <Button
+          onClick={() => {
+            navigator.clipboard.writeText(
+              reminderText
+            );
+          }}
+        >
+          Copy
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={() =>
+            setReminderText("")
+          }
+        >
+          Close
+        </Button>
+
+      </div>
+    </div>
+  </div>
+)}
             <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-primary to-accent text-xs font-semibold text-primary-foreground">
               AR
             </div>

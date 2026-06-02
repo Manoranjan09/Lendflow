@@ -39,6 +39,7 @@ import {
   getLoans,
   createLoan,
   deleteLoan,
+  updateLoan,
 } from "@/lib/api/loans";
 
 import { getBorrowers } from "@/lib/api/borrowers";
@@ -64,21 +65,59 @@ const [selectedLoan, setSelectedLoan] =
   useState<number | null>(null);
   const [repaymentOpen, setRepaymentOpen] =
   useState(false);
-  const {
+ const user = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
+
+const lenderId =
+  user?.dbUser?.id;
+
+const {
   data: stats,
 } = useQuery({
-  queryKey: ["dashboard-stats"],
-  queryFn: getDashboardStats,
-});
-  const { data: loans = [] } = useQuery({
-    queryKey: ["loans"],
-    queryFn: getLoans,
-  });
+  queryKey: [
+    "dashboard-stats",
+    lenderId,
+  ],
 
-  const { data: borrowers = [] } = useQuery({
-    queryKey: ["borrowers"],
-    queryFn: getBorrowers,
+  queryFn: () =>
+    getDashboardStats(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
+});
+
+const [editingLoan, setEditingLoan] =
+  useState<any>(null);
+
+const { data: loans = [] } =
+  useQuery({
+    queryKey: [
+      "loans",
+      lenderId,
+    ],
+
+    queryFn: () =>
+      getLoans(
+        lenderId
+      ),
+
+    enabled:
+      !!lenderId,
   });
+  const { data: borrowers = [] } = useQuery({
+    
+  queryKey: [
+    "borrowers",
+    user?.dbUser?.id,
+  ],
+
+  queryFn: () =>
+    getBorrowers(
+      user.dbUser.id
+    ),
+});
   const borrowerMap = useMemo(() => {
   const map = new Map<number, string>();
 
@@ -96,8 +135,11 @@ const [selectedLoan, setSelectedLoan] =
       toast.success("Loan created successfully");
 
       queryClient.invalidateQueries({
-        queryKey: ["loans"],
-      });
+  queryKey: [
+    "loans",
+    lenderId,
+  ],
+});
 
       setOpen(false);
     },
@@ -149,16 +191,24 @@ const [selectedLoan, setSelectedLoan] =
       form.get("due_date")
     );
 
-    createLoanMutation.mutate({
-      borrower_id,
-      principal_amount,
-      interest_rate,
-      interest_type,
-      is_compound:
-        interest_type === "Compound",
-      issue_date,
-      due_date,
-    });
+   const user = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
+
+createLoanMutation.mutate({
+  lender_id: user.dbUser.id,
+
+  borrower_id,
+  principal_amount,
+  interest_rate,
+  interest_type,
+
+  is_compound:
+    interest_type === "Compound",
+
+  issue_date,
+  due_date,
+});
   }
 const {
   data: loanSummary,
@@ -212,8 +262,11 @@ const createRepaymentMutation =
       });
 
       queryClient.invalidateQueries({
-        queryKey: ["loans"],
-      });
+  queryKey: [
+    "loans",
+    lenderId,
+  ],
+});
 
       setRepaymentOpen(false);
     },
@@ -221,6 +274,38 @@ const createRepaymentMutation =
     onError: () => {
       toast.error(
         "Failed to add repayment"
+      );
+    },
+  });
+  const updateLoanMutation =
+  useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: any) =>
+      updateLoan(
+        id,
+        data
+      ),
+
+    onSuccess: () => {
+      toast.success(
+        "Loan updated"
+      );
+
+     queryClient.invalidateQueries({
+  queryKey: [
+    "loans",
+    lenderId,
+  ],
+});
+
+      setEditingLoan(null);
+    },
+
+    onError: () => {
+      toast.error(
+        "Update failed"
       );
     },
   });
@@ -233,13 +318,17 @@ const createRepaymentMutation =
         "Loan deleted"
       );
 
-      queryClient.invalidateQueries({
-        queryKey: ["loans"],
-      });
+     queryClient.invalidateQueries({
+  queryKey: [
+    "loans",
+    lenderId,
+  ],
+});
 
       queryClient.invalidateQueries({
         queryKey: [
           "dashboard-stats",
+          lenderId,
         ],
       });
 
@@ -518,6 +607,7 @@ const createRepaymentMutation =
           </thead>
 
           <tbody>
+           
             {filtered.map(
               (loan: any, i: number) => (
                  <motion.tr
@@ -541,12 +631,14 @@ const createRepaymentMutation =
                   }}
                   className="border-b border-border/30 cursor-pointer"
                 >
-                  <td className="p-4">
-                    #{loan.id}
-                  </td>
+                  <td className="p-4 font-medium">
+  LN-{String(loan.id).padStart(4, "0")}
+</td>
 
-                  <td className="p-4">
-  {borrowerMap.get(loan.borrower_id) ?? `#${loan.borrower_id}`}
+        <td className="p-4">
+  {borrowerMap.get(
+    Number(loan.borrower_id)
+  ) || "Unknown Borrower"}
 </td>
 
                   <td className="p-4">
@@ -654,26 +746,46 @@ const createRepaymentMutation =
               Status
             </div>
 
-            <Badge>
-              {loanSummary.status}
-            </Badge>
-            <Button
-  variant="destructive"
-  className="mt-4"
-  onClick={() => {
-    if (
-      confirm(
-        "Delete this loan?"
-      )
-    ) {
-      deleteLoanMutation.mutate(
-        selectedLoan!
+<Badge>
+  {loanSummary.status}
+</Badge>
+
+<div className="flex gap-2 mt-4">
+
+  <Button
+    onClick={() => {
+      const currentLoan =
+        loans.find(
+          (l: any) =>
+            l.id === selectedLoan
+        );
+
+      setEditingLoan(
+        currentLoan
       );
-    }
-  }}
->
-  Delete Loan
-</Button>
+    }}
+  >
+    Edit Loan
+  </Button>
+
+  <Button
+    variant="destructive"
+    onClick={() => {
+      if (
+        confirm(
+          "Delete this loan?"
+        )
+      ) {
+        deleteLoanMutation.mutate(
+          selectedLoan!
+        );
+      }
+    }}
+  >
+    Delete Loan
+  </Button>
+
+</div>
           </div>
         </div>
 
@@ -806,6 +918,176 @@ const createRepaymentMutation =
         </Button>
       </DialogFooter>
     </form>
+  </DialogContent>
+</Dialog>
+<Dialog
+  open={!!editingLoan}
+  onOpenChange={() =>
+    setEditingLoan(null)
+  }
+>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>
+        Edit Loan
+      </DialogTitle>
+    </DialogHeader>
+
+    {editingLoan && (
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+
+          const form =
+            new FormData(
+              e.currentTarget
+            );
+
+          updateLoanMutation.mutate({
+            id: editingLoan.id,
+
+            data: {
+              borrower_id:
+                editingLoan.borrower_id,
+
+              principal_amount:
+                Number(
+                  form.get(
+                    "principal_amount"
+                  )
+                ),
+
+              interest_rate:
+                Number(
+                  form.get(
+                    "interest_rate"
+                  )
+                ),
+
+              interest_type:
+                String(
+                  form.get(
+                    "interest_type"
+                  )
+                ),
+
+              is_compound:
+                String(
+                  form.get(
+                    "interest_type"
+                  )
+                ) === "Compound",
+
+              issue_date:
+                String(
+                  form.get(
+                    "issue_date"
+                  )
+                ),
+
+              due_date:
+                String(
+                  form.get(
+                    "due_date"
+                  )
+                ),
+            },
+          });
+        }}
+      >
+        <div>
+          <Label>
+            Principal Amount
+          </Label>
+
+          <Input
+            name="principal_amount"
+            type="number"
+            defaultValue={
+              editingLoan.principal_amount
+            }
+          />
+        </div>
+
+        <div>
+          <Label>
+            Interest Rate
+          </Label>
+
+          <Input
+            name="interest_rate"
+            type="number"
+            defaultValue={
+              editingLoan.interest_rate
+            }
+          />
+        </div>
+
+        <div>
+          <Label>
+            Interest Type
+          </Label>
+
+          <Select
+            name="interest_type"
+            defaultValue={
+              editingLoan.interest_type
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="Simple">
+                Simple
+              </SelectItem>
+
+              <SelectItem value="Compound">
+                Compound
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>
+            Issue Date
+          </Label>
+
+          <Input
+            name="issue_date"
+            type="date"
+            defaultValue={
+              editingLoan.issue_date
+            }
+          />
+        </div>
+
+        <div>
+          <Label>
+            Due Date
+          </Label>
+
+          <Input
+            name="due_date"
+            type="date"
+            defaultValue={
+              editingLoan.due_date
+            }
+          />
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="submit"
+          >
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </form>
+    )}
   </DialogContent>
 </Dialog>
     </div>

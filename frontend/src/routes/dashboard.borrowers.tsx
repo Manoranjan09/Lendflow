@@ -36,6 +36,7 @@ import {
   getBorrowers,
   createBorrower,
   deleteBorrower,
+  updateBorrower,
 } from "@/lib/api/borrowers";
 export const Route = createFileRoute("/dashboard/borrowers")({
   component: BorrowersPage,
@@ -66,14 +67,25 @@ function BorrowersPage() {
   });
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
-
+ const [editingBorrower, setEditingBorrower] =
+  useState<any>(null);
+  const user = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
   const {
-    data: borrowersData = [],
-    isLoading,
-  } = useQuery({
-    queryKey: ["borrowers"],
-    queryFn: getBorrowers,
-  });
+  data: borrowersData = [],
+  isLoading,
+} = useQuery({
+  queryKey: [
+    "borrowers",
+    user?.dbUser?.id,
+  ],
+
+  queryFn: () =>
+    getBorrowers(
+      user.dbUser.id
+    ),
+});
 
   const createBorrowerMutation = useMutation({
     mutationFn: createBorrower,
@@ -94,7 +106,35 @@ function BorrowersPage() {
       toast.error("Failed to create borrower");
     },
   });
+const updateBorrowerMutation =
+  useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: any) =>
+      updateBorrower(
+        id,
+        data
+      ),
 
+    onSuccess: () => {
+      toast.success(
+        "Borrower updated"
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: ["borrowers"],
+      });
+
+      setEditingBorrower(null);
+    },
+
+    onError: () => {
+      toast.error(
+        "Update failed"
+      );
+    },
+  });
   const list = borrowersData ?? [];
 
   const filtered = useMemo(() => {
@@ -107,20 +147,37 @@ function BorrowersPage() {
     });
   }, [list, q]);
 
-  async function addBorrower(form: FormData) {
-    const name = String(form.get("name") || "");
-    const phone = String(form.get("phone") || "");
-    const address = String(form.get("address") || "");
-    const aadhaar = String(form.get("aadhaar") || "");
+async function addBorrower(form: FormData) {
+  const user = JSON.parse(
+    localStorage.getItem("user") || "{}"
+  );
 
-    createBorrowerMutation.mutate({
-      name,
-      phone,
-      address,
-      aadhaar,
-    });
-  }
+  const name = String(
+    form.get("name") || ""
+  );
 
+  const phone = String(
+    form.get("phone") || ""
+  );
+
+  const address = String(
+    form.get("address") || ""
+  );
+
+  const aadhaar = String(
+    form.get("aadhaar") || ""
+  );
+
+  createBorrowerMutation.mutate({
+    lender_id:
+      user.dbUser.id,
+
+    name,
+    phone,
+    address,
+    aadhaar,
+  });
+}
   if (isLoading) {
     return (
       <div className="p-6">
@@ -235,6 +292,101 @@ function BorrowersPage() {
             </form>
           </DialogContent>
         </Dialog>
+        <Dialog
+  open={!!editingBorrower}
+  onOpenChange={() =>
+    setEditingBorrower(null)
+  }
+>
+  <DialogContent className="sm:max-w-md">
+    <DialogHeader>
+      <DialogTitle>
+        Edit Borrower
+      </DialogTitle>
+
+      <DialogDescription>
+        Update borrower details
+      </DialogDescription>
+    </DialogHeader>
+
+    {editingBorrower && (
+      <form
+        className="grid gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+
+          const form =
+            new FormData(
+              e.currentTarget
+            );
+
+          updateBorrowerMutation.mutate({
+            id: editingBorrower.id,
+
+            data: {
+              name: form.get("name"),
+              phone: form.get("phone"),
+              address: form.get("address"),
+              aadhaar: form.get("aadhaar"),
+            },
+          });
+        }}
+      >
+        <div className="grid gap-1.5">
+          <Label>Name</Label>
+
+          <Input
+            name="name"
+            defaultValue={
+              editingBorrower.name
+            }
+          />
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label>Phone</Label>
+
+          <Input
+            name="phone"
+            defaultValue={
+              editingBorrower.phone
+            }
+          />
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label>Address</Label>
+
+          <Input
+            name="address"
+            defaultValue={
+              editingBorrower.address
+            }
+          />
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label>Aadhaar</Label>
+
+          <Input
+            name="aadhaar"
+            defaultValue={
+              editingBorrower.aadhaar
+            }
+          />
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="submit"
+          >
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </form>
+    )}
+  </DialogContent>
+</Dialog>
       </div>
 
       <div className="relative flex-1 min-w-[240px]">
@@ -330,26 +482,35 @@ function BorrowersPage() {
                     Active
                   </Badge>
                 </td>
+<td className="px-5 py-3.5 text-right flex gap-2 justify-end">
 
-                <td className="px-5 py-3.5 text-right">
-<Button
-  variant="ghost"
-  size="sm"
-  onClick={() => {
-    if (
-      confirm(
-        `Delete ${b.name}?`
-      )
-    ) {
-      deleteBorrowerMutation.mutate(
-        b.id
-      );
-    }
-  }}
->
-  Delete
-</Button>
-                </td>
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={() => {
+      if (
+        confirm(`Delete ${b.name}?`)
+      ) {
+        deleteBorrowerMutation.mutate(
+          b.id
+        );
+      }
+    }}
+  >
+    Delete
+  </Button>
+
+  <Button
+    size="sm"
+    onClick={() => {
+      console.log(b);
+      setEditingBorrower(b);
+    }}
+  >
+    Edit
+  </Button>
+
+</td>
               </motion.tr>
             ))}
 

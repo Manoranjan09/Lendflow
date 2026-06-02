@@ -1,24 +1,89 @@
 import { apiFetch } from "./client";
 
-export function getDashboardStats() {
-  return apiFetch("/dashboard/stats");
+export function getDashboardStats(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/stats?lender_id=${lenderId}`
+  );
 }
 
-export function getAnalyticsData() {
-  return apiFetch("/dashboard/analytics");
+export function getAnalyticsData(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/analytics?lender_id=${lenderId}`
+  );
 }
-export function getRecentBorrowers() {
-  return apiFetch("/dashboard/recent-borrowers");
+
+export function getRecentBorrowers(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/recent-borrowers?lender_id=${lenderId}`
+  );
 }
-export function getDashboardInsights() {
-  return apiFetch("/dashboard/insights");
+
+export function getDashboardInsights(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/insights?lender_id=${lenderId}`
+  );
 }
-export function getWeeklyRepayments() {
-  return apiFetch("/dashboard/weekly-repayments");
+
+export function getWeeklyRepayments(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/weekly-repayments?lender_id=${lenderId}`
+  );
 }
-export function getMonthlyTrend() {
-  return apiFetch("/dashboard/monthly-trend");
+
+export function getMonthlyTrend(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/monthly-trend?lender_id=${lenderId}`
+  );
 }
-export function getDashboardAlerts() {
-  return apiFetch("/dashboard/alerts");
+
+export function getDashboardAlerts(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/alerts?lender_id=${lenderId}`
+  );
+}
+
+export function getNotifications(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/notifications?lender_id=${lenderId}`
+  );
+}
+
+export function generateReminder(
+  borrowerName: string
+) {
+  return apiFetch(
+    `/dashboard/reminder/${borrowerName}`
+  );
+}
+
+export function getAnalytics(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/interest-recovery?lender_id=${lenderId}`
+  );
+}
+
+export function getLandingInsight(
+  lenderId: number
+) {
+  return apiFetch(
+    `/dashboard/landing-insight?lender_id=${lenderId}`
+  );
 }

@@ -3,7 +3,8 @@ import { motion } from "motion/react";
 import { ArrowRight, BarChart3, Bot, Calculator, ShieldCheck, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/site-nav";
-
+import {getLandingInsight } from "@/lib/api/dashboard";
+import { useQuery } from "@tanstack/react-query";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -24,10 +25,22 @@ const features = [
 ];
 
 const stats = [
-  { v: "₹42 Cr+", l: "Loans tracked" },
-  { v: "18,400", l: "Active borrowers" },
-  { v: "99.2%", l: "Recovery accuracy" },
-  { v: "<200ms", l: "AI response" },
+  {
+    v: "100%",
+    l: "Automated Interest Calculation",
+  },
+  {
+    v: "24/7",
+    l: "AI Loan Assistant",
+  },
+  {
+    v: "Real-Time",
+    l: "Repayment Tracking",
+  },
+  {
+    v: "Smart",
+    l: "Risk Detection",
+  },
 ];
 
 function Landing() {
@@ -49,24 +62,53 @@ function Landing() {
               AI‑powered fintech for modern lenders
             </div>
             <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.05] tracking-tight md:text-7xl">
-              Smart loan & interest <br />
-              <span className="text-gradient">management, on autopilot.</span>
-            </h1>
+  Manage Borrowers,
+  Loans & Repayments
+  <br />
+  <span className="text-gradient">
+    with AI-Powered Intelligence.
+  </span>
+</h1>
+
             <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground md:text-lg">
-              Track loans, automate simple & compound interest, monitor repayments, and let AI surface risky borrowers before they default.
-            </p>
+  Track loans, automate interest calculations,
+  monitor repayments, generate reminders,
+  and identify risky borrowers before they default.
+</p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-primary-foreground glow hover:opacity-90">
-                <Link to="/dashboard">
-                  Start lending <ArrowRight className="ml-1.5 h-4 w-4" />
-                </Link>
-              </Button>
+ <Button
+  asChild
+  size="lg"
+  className="bg-gradient-to-r from-primary to-accent text-primary-foreground glow hover:opacity-90"
+>
+  <Link to="/dashboard">
+    Open Dashboard
+    <ArrowRight className="ml-1.5 h-4 w-4" />
+  </Link>
+</Button>
               <Button asChild size="lg" variant="outline" className="border-border/80 bg-card/40 backdrop-blur">
                 <Link to="/calculator"><Calculator className="mr-1.5 h-4 w-4" /> AI Calculator</Link>
               </Button>
             </div>
           </motion.div>
-
+<div className="mt-12 flex flex-wrap justify-center gap-3 text-sm">
+  {[
+    "Loan Management",
+    "Borrower CRM",
+    "AI Insights",
+    "Risk Detection",
+    "Repayment Tracking",
+    "Analytics",
+    "Reminder System",
+  ].map((item) => (
+    <div
+      key={item}
+      className="rounded-full border border-border/60 bg-card/40 px-4 py-2 backdrop-blur"
+    >
+      ✓ {item}
+    </div>
+  ))}
+</div>
           {/* Hero dashboard mock */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -103,11 +145,18 @@ function Landing() {
                     </div>
                   </div>
                   <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-accent/10 to-primary/10 p-5">
-                    <Bot className="h-5 w-5 text-primary" />
-                    <div className="mt-3 font-display text-sm font-semibold">AI insight</div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      3 borrowers likely to delay this month. Suggested action: send a reminder to BR‑1043.
-                    </p>
+                   <Bot className="h-5 w-5 text-primary" />
+
+<div className="mt-3 font-display text-sm font-semibold">
+  AI Insight
+</div>
+
+<p className="mt-1 text-xs text-muted-foreground">
+  AI detected an overdue borrower.
+  Suggested action:
+  Generate WhatsApp reminder.
+</p>
+
                   </div>
                 </div>
               </div>

@@ -9,3 +9,4 @@ class LoanCreate(BaseModel):
     is_compound: bool
     issue_date: date
     due_date: date
+    lender_id: int

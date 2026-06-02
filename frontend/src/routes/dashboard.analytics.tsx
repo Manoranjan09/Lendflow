@@ -1,36 +1,79 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { getDashboardStats } from "@/lib/api/dashboard";
+import {
+  getDashboardStats,
+  getAnalytics,
+} from "@/lib/api/dashboard";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { useQuery } from "@tanstack/react-query";
 import { getAnalyticsData } from "@/lib/api/dashboard";
+
 export const Route = createFileRoute("/dashboard/analytics")({
   component: Analytics,
 });
 
-const trend = Array.from({ length: 12 }).map((_, i) => ({
-  m: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i],
-  interest: 12000 + i * 4200 + (i % 3) * 1800,
-  recovery: 30000 + i * 6100,
-}));
 
 const COLORS = ["oklch(0.78 0.18 158)", "oklch(0.65 0.20 265)", "oklch(0.82 0.16 80)", "oklch(0.66 0.22 22)"];
 const fmtINR = (value: number) =>
   `₹${Number(value).toLocaleString("en-IN")}`;
+
 function Analytics() {
+
+const user = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
+
+const lenderId =
+  user?.dbUser?.id;
+
 const { data } = useQuery({
-  queryKey: ["analytics"],
-  queryFn: getAnalyticsData,
+  queryKey: [
+    "analytics",
+    lenderId,
+  ],
+
+  queryFn: () =>
+    getAnalyticsData(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
 });
 
+const {
+  data: analyticsData = [],
+} = useQuery({
+  queryKey: [
+    "interest-recovery",
+    lenderId,
+  ],
+
+  queryFn: () =>
+    getAnalytics(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
+});
 const byStatus =
   data?.portfolio_status ?? [];
+
 const { data: stats } = useQuery({
-  queryKey: ["dashboard-stats"],
-  queryFn: getDashboardStats,
+  queryKey: [
+    "dashboard-stats",
+    lenderId,
+  ],
+
+  queryFn: () =>
+    getDashboardStats(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
 });
-  const topRisky =
+
+const topRisky =
   data?.top_exposure ?? [];
 
 const riskyAccounts =
@@ -106,23 +149,39 @@ const riskyAccounts =
           <div className="font-display text-base font-semibold">Interest earned vs Recovery</div>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trend}>
+             <AreaChart data={analyticsData}>
                 <defs>
                   <linearGradient id="i1" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.78 0.18 158)" stopOpacity={0.6} />
-                    <stop offset="100%" stopColor="oklch(0.78 0.18 158)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="i2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.65 0.20 265)" stopOpacity={0.5} />
-                    <stop offset="100%" stopColor="oklch(0.65 0.20 265)" stopOpacity={0} />
-                  </linearGradient>
+  <stop offset="0%" stopColor="oklch(0.78 0.18 158)" stopOpacity={0.6} />
+  <stop offset="100%" stopColor="oklch(0.78 0.18 158)" stopOpacity={0} />
+</linearGradient>
+
+<linearGradient id="i2" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0%" stopColor="oklch(0.65 0.20 265)" stopOpacity={0.5} />
+  <stop offset="100%" stopColor="oklch(0.65 0.20 265)" stopOpacity={0} />
+</linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.30 0.03 252 / 0.5)" />
-                <XAxis dataKey="m" stroke="oklch(0.70 0.02 250)" fontSize={12} />
+               <XAxis dataKey="month" stroke="oklch(0.70 0.02 250)" fontSize={12} />
                 <YAxis stroke="oklch(0.70 0.02 250)" fontSize={12} tickFormatter={(v) => `${v/1000}k`} />
                 <Tooltip contentStyle={{ background: "oklch(0.20 0.03 250)", border: "1px solid oklch(0.30 0.03 252)", borderRadius: 12 }} formatter={(v: number) => fmtINR(v)} />
-                <Area type="monotone" dataKey="recovery" stroke="oklch(0.65 0.20 265)" strokeWidth={2} fill="url(#i2)" />
-                <Area type="monotone" dataKey="interest" stroke="oklch(0.78 0.18 158)" strokeWidth={2} fill="url(#i1)" />
+               <Area
+  type="monotone"
+  dataKey="recovered"
+  name="Recovered"
+  stroke="oklch(0.65 0.20 265)"
+  strokeWidth={3}
+  fill="url(#i2)"
+/>
+
+<Area
+  type="monotone"
+  dataKey="interest"
+  name="Interest"
+  stroke="oklch(0.78 0.18 158)"
+  strokeWidth={3}
+  fill="url(#i1)"
+/>
               </AreaChart>
             </ResponsiveContainer>
           </div>

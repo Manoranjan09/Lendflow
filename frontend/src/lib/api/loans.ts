@@ -1,7 +1,7 @@
 import { apiFetch } from "./client";
 
-export function getLoans() {
-  return apiFetch("/loans/");
+export function getLoans(lenderId: number) {
+  return apiFetch(`/loans/?lender_id=${lenderId}`);
 }
 
 export function createLoan(data: {
@@ -23,4 +23,7 @@ export function getLoanSummary(loanId: number) {
 }
 export function deleteLoan(loanId: number) {
   return apiFetch(`/loans/${loanId}`, { method: "DELETE" });
+}
+export function updateLoan(id: number, data: any) {
+  return apiFetch(`/loans/${id}`, { method: "PUT", body: JSON.stringify(data),});
 }

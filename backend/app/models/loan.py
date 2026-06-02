@@ -16,7 +16,10 @@ class Loan(Base):
     __tablename__ = "loans"
 
     id = Column(Integer, primary_key=True)
-
+    lender_id = Column(
+    Integer,
+    ForeignKey("users.id")
+)
     borrower_id = Column(
         Integer,
         ForeignKey("borrowers.id")

@@ -5,7 +5,7 @@ from app.db.database import get_db
 from app.models.loan import Loan
 from app.models.repayment import Repayment
 from app.schemas.loan import LoanCreate
-
+from datetime import date
 from app.services.loan_calculator import (
     calculate_simple_interest,
     calculate_compound_interest
@@ -25,6 +25,7 @@ def create_loan(
     db: Session = Depends(get_db)
 ):
     loan = Loan(
+        lender_id=data.lender_id,
         borrower_id=data.borrower_id,
         principal_amount=data.principal_amount,
         interest_rate=data.interest_rate,
@@ -40,14 +41,20 @@ def create_loan(
 
     return loan
 
-
 @router.get("/")
 def get_loans(
+    lender_id: int,
     db: Session = Depends(get_db)
 ):
-    return db.query(Loan).all()
+    loans = (
+        db.query(Loan)
+        .filter(
+            Loan.lender_id == lender_id
+        )
+        .all()
+    )
 
-
+    return loans
 @router.get("/{loan_id}/summary")
 def loan_summary(
     loan_id: int,
@@ -136,9 +143,10 @@ def get_single_loan(
         )
 
     return loan
-@router.delete("/{loan_id}")
-def delete_loan(
+@router.put("/{loan_id}")
+def update_loan(
     loan_id: int,
+    data: LoanCreate,
     db: Session = Depends(get_db)
 ):
     loan = (
@@ -153,12 +161,19 @@ def delete_loan(
             detail="Loan not found"
         )
 
-    db.delete(loan)
-    db.commit()
+    loan.borrower_id = data.borrower_id
+    loan.principal_amount = data.principal_amount
+    loan.interest_rate = data.interest_rate
+    loan.interest_type = data.interest_type
+    loan.is_compound = data.is_compound
+    loan.issue_date = data.issue_date
+    loan.due_date = data.due_date
 
-    return {
-        "message": "Loan deleted"
-    }
+    db.commit()
+    db.refresh(loan)
+
+    return loan
+
 @router.delete("/{loan_id}")
 def delete_loan(
     loan_id: int,

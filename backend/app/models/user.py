@@ -14,6 +14,11 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
 
     password_hash = Column(String, nullable=False)
+    google_id = Column(
+    String,
+    unique=True,
+    nullable=True
+)
 
     role = Column(String, nullable=False)  # LENDER or BORROWER
 

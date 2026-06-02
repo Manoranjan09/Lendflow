@@ -20,53 +20,144 @@ export const Route = createFileRoute("/dashboard/")({
 });
 
 function Overview() {
-  const { data: stats } = useQuery({ queryKey: ["dashboard-stats"], queryFn: getDashboardStats });
-  const {
+const user = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
+
+const lenderId =
+  user?.dbUser?.id;
+
+const { data: stats } = useQuery({
+  queryKey: [
+    "dashboard-stats",
+    lenderId,
+  ],
+
+  queryFn: () =>
+    getDashboardStats(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
+});
+
+const {
   data: insights,
 } = useQuery({
-  queryKey: ["dashboard-insights"],
-  queryFn: getDashboardInsights,
+  queryKey: [
+    "dashboard-insights",
+    lenderId,
+  ],
+
+  queryFn: () =>
+    getDashboardInsights(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
 });
-  const {
+
+const {
   data: recentBorrowers = [],
 } = useQuery({
-  queryKey: ["recent-borrowers"],
-  queryFn: getRecentBorrowers,
-});
-  const totalLent = stats?.total_lent ?? 0;
-  const recovered = stats?.total_collected ?? 0;
-  const pending = stats?.outstanding_balance ?? 0;
-  const overdue = stats?.overdue_loans ?? 0;
+  queryKey: [
+    "recent-borrowers",
+    lenderId,
+  ],
 
-  const kpis = [
-    { l: "Total lent", v: fmtINR(totalLent), icon: Wallet, trend: "+12.4%" },
-    { l: "Recovered", v: fmtINR(recovered), icon: TrendingUp, trend: "+8.1%" },
-    { l: "Pending", v: fmtINR(pending), icon: IndianRupee, trend: "-3.2%" },
-    { l: "Overdue accounts", v: String(overdue), icon: AlertTriangle, trend: "Review" },
-  ];
-  const {
+  queryFn: () =>
+    getRecentBorrowers(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
+});
+
+const totalLent =
+  stats?.total_lent ?? 0;
+
+const recovered =
+  stats?.total_collected ?? 0;
+
+const pending =
+  stats?.outstanding_balance ?? 0;
+
+const overdue =
+  stats?.overdue_loans ?? 0;
+
+const kpis = [
+  {
+    l: "Total lent",
+    v: fmtINR(totalLent),
+    icon: Wallet,
+    trend: "+12.4%",
+  },
+  {
+    l: "Recovered",
+    v: fmtINR(recovered),
+    icon: TrendingUp,
+    trend: "+8.1%",
+  },
+  {
+    l: "Pending",
+    v: fmtINR(pending),
+    icon: IndianRupee,
+    trend: "-3.2%",
+  },
+  {
+    l: "Overdue accounts",
+    v: String(overdue),
+    icon: AlertTriangle,
+    trend: "Review",
+  },
+];
+
+const {
   data: monthlyTrend = [],
 } = useQuery({
   queryKey: [
-    "monthly-trend"
+    "monthly-trend",
+    lenderId,
   ],
-  queryFn:
-    getMonthlyTrend,
+
+  queryFn: () =>
+    getMonthlyTrend(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
 });
+
 const {
   data: weeklyRepayments = [],
 } = useQuery({
   queryKey: [
-    "weekly-repayments"
+    "weekly-repayments",
+    lenderId,
   ],
-  queryFn:
-    getWeeklyRepayments,
+
+  queryFn: () =>
+    getWeeklyRepayments(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
 });
+
 const {
   data: alerts = [],
 } = useQuery({
-  queryKey: ["alerts"],
-  queryFn: getDashboardAlerts,
+  queryKey: [
+    "dashboard-alerts",
+    lenderId,
+  ],
+
+  queryFn: () =>
+    getDashboardAlerts(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
 });
   return (
     <div className="space-y-6">

@@ -20,7 +20,10 @@ class Repayment(Base):
         Integer,
         ForeignKey("loans.id")
     )
-
+    lender_id = Column(
+    Integer,
+    ForeignKey("users.id")
+)
     amount_paid = Column(Float)
 
     payment_date = Column(Date)

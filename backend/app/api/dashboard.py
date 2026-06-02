@@ -47,11 +47,24 @@ router = APIRouter(
 
 @router.get("/stats")
 def dashboard_stats(
+    lender_id: int,
     db: Session = Depends(get_db)
 ):
-    total_borrowers = db.query(Borrower).count()
+    total_borrowers = (
+    db.query(Borrower)
+    .filter(
+        Borrower.lender_id == lender_id
+    )
+    .count()
+)
 
-    loans = db.query(Loan).all()
+    loans = (
+    db.query(Loan)
+    .filter(
+        Loan.lender_id == lender_id
+    )
+    .all()
+)
 
     total_loans = len(loans)
 
@@ -101,9 +114,16 @@ def dashboard_stats(
 
 @router.get("/insights")
 def dashboard_insights(
+    lender_id: int,
     db: Session = Depends(get_db)
 ):
-    loans = db.query(Loan).all()
+    loans = (
+    db.query(Loan)
+    .filter(
+        Loan.lender_id == lender_id
+    )
+    .all()
+)
 
     total_lent = sum(
         loan.principal_amount
@@ -133,75 +153,21 @@ def dashboard_insights(
         "total_collected": total_collected,
         "outstanding": total_lent - total_collected
     }
-@router.get("/analytics")
-def analytics_data(
-    db: Session = Depends(get_db)
-):
-    loans = db.query(Loan).all()
 
-    portfolio_status = [
-        {
-            "name": "ACTIVE",
-            "value": sum(
-                1 for loan in loans
-                if loan.status == "ACTIVE"
-            )
-        },
-        {
-            "name": "OVERDUE",
-            "value": sum(
-                1 for loan in loans
-                if loan.status == "OVERDUE"
-            )
-        },
-        {
-            "name": "PAID",
-            "value": sum(
-                1 for loan in loans
-                if loan.status == "PAID"
-            )
-        }
-    ]
-
-    top_exposure = []
-
-    for loan in loans:
-        borrower = (
-            db.query(Borrower)
-            .filter(
-                Borrower.id == loan.borrower_id
-            )
-            .first()
-        )
-
-        top_exposure.append({
-            "borrower": borrower.name if borrower else f"#{loan.borrower_id}",
-            "exposure": loan.principal_amount,
-            "status": loan.status
-        })
-
-    top_exposure.sort(
-        key=lambda x: x["exposure"],
-        reverse=True
-    )
-
-    risky_accounts = top_exposure[:5]
-
-    return {
-        "portfolio_status": portfolio_status,
-        "top_exposure": top_exposure[:5],
-        "risky_accounts": risky_accounts
-    }
 @router.get("/recent-borrowers")
 def recent_borrowers(
+    lender_id: int,
     db: Session = Depends(get_db)
 ):
     borrowers = (
-        db.query(Borrower)
-        .order_by(Borrower.id.desc())
-        .limit(5)
-        .all()
+    db.query(Borrower)
+    .filter(
+        Borrower.lender_id == lender_id
     )
+    .order_by(Borrower.id.desc())
+    .limit(5)
+    .all()
+)
 
     result = []
 
@@ -357,11 +323,18 @@ def monthly_trend(
     return result
 @router.get("/alerts")
 def dashboard_alerts(
+    lender_id: int,
     db: Session = Depends(get_db)
 ):
     today = date.today()
 
-    loans = db.query(Loan).all()
+    loans = (
+    db.query(Loan)
+    .filter(
+        Loan.lender_id == lender_id
+    )
+    .all()
+)
 
     alerts = []
 
@@ -383,17 +356,241 @@ def dashboard_alerts(
         if days_left < 0:
 
             alerts.append({
-                "type": "OVERDUE",
-                "borrower": borrower.name,
-                "days": abs(days_left)
-            })
+    "type": "OVERDUE",
+    "borrower": borrower.name,
+    "phone": borrower.phone,
+    "days": abs(days_left),
+    "message": f"{borrower.name} overdue by {abs(days_left)} day(s)"
+})
 
         elif days_left <= 7:
 
             alerts.append({
-                "type": "DUE_SOON",
-                "borrower": borrower.name,
-                "days": days_left
-            })
+    "type": "DUE_SOON",
+    "borrower": borrower.name,
+    "phone": borrower.phone,
+    "days": days_left,
+    "message": f"{borrower.name} due in {days_left} day(s)"
+})
 
     return alerts
+
+@router.get("/interest-recovery")
+def analytics(
+    lender_id: int,
+    db: Session = Depends(get_db)
+):
+    loans = (
+        db.query(Loan)
+        .filter(
+            Loan.lender_id == lender_id
+        )
+        .all()
+    )
+    
+    repayments = db.query(Repayment).all()
+
+    months = {
+        "Jan": {"month": "Jan", "interest": 0, "recovered": 0},
+        "Feb": {"month": "Feb", "interest": 0, "recovered": 0},
+        "Mar": {"month": "Mar", "interest": 0, "recovered": 0},
+        "Apr": {"month": "Apr", "interest": 0, "recovered": 0},
+        "May": {"month": "May", "interest": 0, "recovered": 0},
+        "Jun": {"month": "Jun", "interest": 0, "recovered": 0},
+        "Jul": {"month": "Jul", "interest": 0, "recovered": 0},
+        "Aug": {"month": "Aug", "interest": 0, "recovered": 0},
+        "Sep": {"month": "Sep", "interest": 0, "recovered": 0},
+        "Oct": {"month": "Oct", "interest": 0, "recovered": 0},
+        "Nov": {"month": "Nov", "interest": 0, "recovered": 0},
+        "Dec": {"month": "Dec", "interest": 0, "recovered": 0},
+    }
+
+    # Interest by loan issue month
+    for loan in loans:
+
+        if not loan.issue_date:
+            continue
+
+        month = loan.issue_date.strftime("%b")
+
+        principal = loan.principal_amount or 0
+        rate = loan.interest_rate or 0
+
+        interest = (
+            principal * rate / 100
+        )
+
+        months[month]["interest"] += interest
+
+    # Recovery by repayment month
+    for repayment in repayments:
+
+        if not repayment.payment_date:
+            continue
+
+        month = repayment.payment_date.strftime("%b")
+
+        months[month]["recovered"] += (
+            repayment.amount_paid or 0
+        )
+
+    return list(months.values())
+@router.get("/notifications")
+def notifications(
+    lender_id: int,
+    db: Session = Depends(get_db)
+):
+    today = date.today()
+
+    loans = (
+    db.query(Loan)
+    .filter(
+        Loan.lender_id == lender_id
+    )
+    .all()
+)
+
+    result = []
+
+    for loan in loans:
+
+        borrower = (
+            db.query(Borrower)
+            .filter(
+                Borrower.id == loan.borrower_id
+            )
+            .first()
+        )
+
+        days_left = (
+            loan.due_date - today
+        ).days
+
+        if days_left < 0:
+            result.append({
+                "type": "OVERDUE",
+                "message":
+                f"{borrower.name} overdue by {abs(days_left)} day(s)"
+            })
+
+        elif days_left <= 7:
+            result.append({
+                "type": "DUE_SOON",
+                "message":
+                f"{borrower.name} due in {days_left} day(s)"
+            })
+
+    return result
+
+@router.get("/landing-insight")
+def landing_insight(
+    db: Session = Depends(get_db)
+):
+    overdue = (
+        db.query(Loan)
+        .filter(
+            Loan.status == "OVERDUE"
+        )
+        .first()
+    )
+
+    if overdue:
+
+        borrower = (
+            db.query(Borrower)
+            .filter(
+                Borrower.id ==
+                overdue.borrower_id
+            )
+            .first()
+        )
+
+        return {
+            "message":
+            f"{borrower.name} is overdue. Suggested action: Send reminder."
+        }
+
+    return {
+        "message":
+        "Portfolio looks healthy. No overdue accounts."
+    }
+@router.get("/reminder/{borrower_name}")
+def generate_reminder(
+    borrower_name: str
+):
+    return {
+        "message": f"""
+Hello {borrower_name},
+
+This is a reminder that your loan payment is overdue.
+
+Kindly clear the outstanding amount at the earliest.
+
+Thank you.
+"""
+    }
+@router.get("/analytics")
+def analytics_data(
+    lender_id: int,
+    db: Session = Depends(get_db)
+):
+    loans = (
+        db.query(Loan)
+        .filter(
+            Loan.lender_id == lender_id
+        )
+        .all()
+    )
+
+    portfolio_status = [
+        {
+            "name": "ACTIVE",
+            "value": sum(
+                1 for loan in loans
+                if loan.status == "ACTIVE"
+            )
+        },
+        {
+            "name": "OVERDUE",
+            "value": sum(
+                1 for loan in loans
+                if loan.status == "OVERDUE"
+            )
+        },
+        {
+            "name": "PAID",
+            "value": sum(
+                1 for loan in loans
+                if loan.status == "PAID"
+            )
+        }
+    ]
+
+    top_exposure = []
+
+    for loan in loans:
+
+        borrower = (
+            db.query(Borrower)
+            .filter(
+                Borrower.id == loan.borrower_id
+            )
+            .first()
+        )
+
+        top_exposure.append({
+            "borrower": borrower.name if borrower else "Unknown",
+            "exposure": loan.principal_amount,
+            "status": loan.status
+        })
+
+    top_exposure.sort(
+        key=lambda x: x["exposure"],
+        reverse=True
+    )
+
+    return {
+        "portfolio_status": portfolio_status,
+        "top_exposure": top_exposure[:5],
+        "risky_accounts": top_exposure[:5]
+    }
