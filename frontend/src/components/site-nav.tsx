@@ -42,17 +42,21 @@ useEffect(() => {
           to="/"
           className="flex items-center gap-2"
         >
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent glow">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg">
+  <span className="text-sm font-bold text-primary-foreground">
+    CF
+  </span>
+</div>
 
-          <span className="font-display text-lg font-semibold tracking-tight">
-            CreditFlow
-            <span className="text-primary">
-              {" "}
-              AI
-            </span>
-          </span>
+<div>
+  <div className="font-display text-lg font-semibold tracking-tight">
+    CreditFlow
+  </div>
+
+  <div className="text-[10px] text-muted-foreground">
+    AI Powered Lending Platform
+  </div>
+</div>
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">

@@ -1,9 +1,15 @@
 import { Bot } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-
+import { useRouterState } from "@tanstack/react-router";
 export function AIFab() {
   const navigate = useNavigate();
+const path = useRouterState({
+    select: (s) => s.location.pathname,
+  });
 
+  if (path === "/dashboard/assistant") {
+    return null;
+  }
   return (
    <button
   title="Ask CreditFlow AI"
