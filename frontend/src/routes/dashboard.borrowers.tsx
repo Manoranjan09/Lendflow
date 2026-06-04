@@ -37,6 +37,13 @@ import {
   createBorrower,
   deleteBorrower,
   updateBorrower,
+  getBorrowerProfile,
+  downloadBorrowerStatement,
+  getBorrowerRisk,
+  getBorrowerDocuments,
+  uploadBorrowerDocument,
+  viewDocument,
+  deleteDocument,
 } from "@/lib/api/borrowers";
 export const Route = createFileRoute("/dashboard/borrowers")({
   component: BorrowersPage,
@@ -67,6 +74,12 @@ function BorrowersPage() {
   });
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
+  const [
+  selectedBorrower,
+  setSelectedBorrower,
+] = useState<number | null>(null);
+const [uploadOpen, setUploadOpen] =
+  useState(false);
  const [editingBorrower, setEditingBorrower] =
   useState<any>(null);
   const user = JSON.parse(
@@ -86,7 +99,54 @@ function BorrowersPage() {
       user.dbUser.id
     ),
 });
+const {
+  data: borrowerProfile,
+} = useQuery({
+  queryKey: [
+    "borrower-profile",
+    selectedBorrower,
+  ],
 
+  queryFn: () =>
+    getBorrowerProfile(
+      selectedBorrower!
+    ),
+
+  enabled:
+    !!selectedBorrower,
+});
+const {
+  data: borrowerRisk,
+} = useQuery({
+  queryKey: [
+    "borrower-risk",
+    selectedBorrower,
+  ],
+
+  queryFn: () =>
+    getBorrowerRisk(
+      selectedBorrower!
+    ),
+
+  enabled:
+    !!selectedBorrower,
+});
+const {
+  data: documents = [],
+} = useQuery({
+  queryKey: [
+    "documents",
+    selectedBorrower,
+  ],
+
+  queryFn: () =>
+    getBorrowerDocuments(
+      selectedBorrower!
+    ),
+
+  enabled:
+    !!selectedBorrower,
+});
   const createBorrowerMutation = useMutation({
     mutationFn: createBorrower,
 
@@ -135,15 +195,76 @@ const updateBorrowerMutation =
       );
     },
   });
+  const uploadDocumentMutation =
+  useMutation({
+    mutationFn: ({
+      borrowerId,
+      formData,
+    }: any) =>
+      uploadBorrowerDocument(
+        borrowerId,
+        formData
+      ),
+
+    onSuccess: () => {
+
+      toast.success(
+        "Document uploaded"
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "documents",
+          selectedBorrower,
+        ],
+      });
+
+      setUploadOpen(false);
+    },
+  });
+  const deleteDocumentMutation =
+  useMutation({
+    mutationFn:
+      deleteDocument,
+
+    onSuccess: () => {
+
+      toast.success(
+        "Document deleted"
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "documents",
+          selectedBorrower,
+        ],
+      });
+    },
+
+    onError: () => {
+      toast.error(
+        "Failed to delete document"
+      );
+    },
+  });
   const list = borrowersData ?? [];
 
   const filtered = useMemo(() => {
     return list.filter((b: any) => {
-      return (
-        !q ||
-        b.name?.toLowerCase().includes(q.toLowerCase()) ||
-        String(b.id).includes(q)
-      );
+      const borrowerCode = `BR-${String(
+  b.id
+).padStart(4, "0")}`;
+
+return (
+  !q ||
+  b.name?.toLowerCase().includes(
+    q.toLowerCase()
+  ) ||
+  borrowerCode
+    .toLowerCase()
+    .includes(q.toLowerCase()) ||
+  String(b.id).includes(q)
+);
     });
   }, [list, q]);
 
@@ -207,7 +328,7 @@ async function addBorrower(form: FormData) {
             </Button>
           </DialogTrigger>
 
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-display">
                 New Borrower
@@ -298,7 +419,7 @@ async function addBorrower(form: FormData) {
     setEditingBorrower(null)
   }
 >
-  <DialogContent className="sm:max-w-md">
+  <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
     <DialogHeader>
       <DialogTitle>
         Edit Borrower
@@ -431,6 +552,11 @@ async function addBorrower(form: FormData) {
           <tbody>
             {filtered.map((b: any, i: number) => (
               <motion.tr
+  onClick={() =>
+    setSelectedBorrower(
+      b.id
+    )
+  }
                 key={b.id}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -438,7 +564,7 @@ async function addBorrower(form: FormData) {
                   duration: 0.25,
                   delay: i * 0.02,
                 }}
-                className="border-t border-border/40 hover:bg-secondary/30"
+               className="border-t border-border/40 hover:bg-secondary/30 cursor-pointer"
               >
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
@@ -451,14 +577,14 @@ async function addBorrower(form: FormData) {
                     </div>
 
                     <div>
-                      <div className="font-medium">
-                        {b.name}
-                      </div>
+  <div className="font-medium">
+    {b.name}
+  </div>
 
-                      <div className="text-xs text-muted-foreground">
-                        ID #{b.id}
-                      </div>
-                    </div>
+  <div className="text-xs text-muted-foreground">
+    BR-{String(b.id).padStart(4, "0")}
+  </div>
+</div>
                   </div>
                 </td>
 
@@ -484,31 +610,40 @@ async function addBorrower(form: FormData) {
                 </td>
 <td className="px-5 py-3.5 text-right flex gap-2 justify-end">
 
-  <Button
-    variant="ghost"
-    size="sm"
-    onClick={() => {
-      if (
-        confirm(`Delete ${b.name}?`)
-      ) {
-        deleteBorrowerMutation.mutate(
-          b.id
-        );
-      }
-    }}
-  >
-    Delete
-  </Button>
+ <Button
+  size="sm"
+  variant="destructive"
+  onClick={(e) => {
 
-  <Button
-    size="sm"
-    onClick={() => {
-      console.log(b);
-      setEditingBorrower(b);
-    }}
-  >
-    Edit
-  </Button>
+    e.stopPropagation();
+
+    if (
+      confirm("Delete borrower?")
+    ) {
+      deleteBorrowerMutation.mutate(
+        b.id
+      );
+    }
+
+  }}
+>
+  Delete
+</Button>
+
+<Button
+  size="sm"
+  onClick={(e) => {
+
+    e.stopPropagation();
+
+    console.log(b);
+
+    setEditingBorrower(b);
+
+  }}
+>
+  Edit
+</Button>
 
 </td>
               </motion.tr>
@@ -527,6 +662,447 @@ async function addBorrower(form: FormData) {
           </tbody>
         </table>
       </div>
+      <Dialog
+  open={!!selectedBorrower}
+  onOpenChange={() =>
+    setSelectedBorrower(null)
+  }
+>
+  <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+
+    <DialogHeader>
+      <DialogTitle>
+        Borrower Profile
+      </DialogTitle>
+    </DialogHeader>
+
+    {borrowerProfile && (
+      <div className="space-y-6">
+
+        {/* Profile */}
+
+        <div className="rounded-xl border p-3">
+         <div className="flex items-start justify-between mb-4">
+
+  <h3 className="text-3xl font-bold">
+    {borrowerProfile.borrower.name}
+  </h3>
+
+ <div className="flex gap-2">
+
+  <Button
+    onClick={() =>
+      downloadBorrowerStatement(
+        borrowerProfile.borrower.id
+      )
+    }
+    className="bg-gradient-to-r from-primary to-accent"
+  >
+    📄 Download Statement
+  </Button>
+
+  <Button
+    variant="outline"
+    onClick={() =>
+      setUploadOpen(true)
+    }
+  >
+    📤 Upload Document
+  </Button>
+
+</div>
+
+</div>
+          <p className="text-sm text-muted-foreground">
+            📞 {borrowerProfile.borrower.phone}
+          </p>
+
+          <p className="text-sm text-muted-foreground">
+            📍 {borrowerProfile.borrower.address}
+          </p>
+
+          <p className="text-sm text-muted-foreground">
+            Aadhaar:
+            {" "}
+            {borrowerProfile.borrower.aadhaar}
+          </p>
+        </div>
+{borrowerRisk && (
+  <div
+    className={`rounded-2xl border p-5 ${
+      borrowerRisk.risk === "LOW"
+        ? "border-green-500/40 bg-green-500/10"
+        : borrowerRisk.risk === "MEDIUM"
+        ? "border-yellow-500/40 bg-yellow-500/10"
+        : "border-red-500/40 bg-red-500/10"
+    }`}
+  >
+    <div className="flex items-center justify-between">
+
+      <div>
+        <div className="text-sm text-muted-foreground">
+          AI Risk Analysis
+        </div>
+
+        <div className="mt-1 text-3xl font-bold">
+          {borrowerRisk.score}/100
+        </div>
+      </div>
+
+      <Badge
+        className={
+          borrowerRisk.risk === "LOW"
+            ? "bg-green-500"
+            : borrowerRisk.risk === "MEDIUM"
+            ? "bg-yellow-500 text-black"
+            : "bg-red-500"
+        }
+      >
+        {borrowerRisk.risk} RISK
+      </Badge>
+
+    </div>
+
+    <div className="mt-4 space-y-1 text-sm">
+
+      {borrowerRisk.reasons.map(
+        (
+          reason: string,
+          index: number
+        ) => (
+          <div key={index}>
+            • {reason}
+          </div>
+        )
+      )}
+<div className="mt-5 border-t pt-4">
+
+  <div className="mb-2 font-medium">
+    AI Suggestions
+  </div>
+
+  <div className="space-y-2">
+
+    {borrowerRisk.suggestions?.map(
+      (
+        suggestion: string,
+        index: number
+      ) => (
+        <div
+          key={index}
+          className="rounded-lg border border-green-500/20 bg-green-500/5 p-2 text-sm text-green-400"
+        >
+          ✓ {suggestion}
+        </div>
+      )
+    )}
+
+  </div>
+
+</div>
+    </div>
+  </div>
+)}
+
+        {/* Summary Cards */}
+
+        <div className="grid md:grid-cols-4 gap-4">
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">
+              Total Loans
+            </div>
+
+            <div className="text-2xl font-bold">
+              {borrowerProfile.total_loans}
+            </div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">
+              Borrowed
+            </div>
+
+            <div className="text-2xl font-bold">
+              ₹
+              {borrowerProfile.total_borrowed.toLocaleString()}
+            </div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">
+              Outstanding
+            </div>
+
+            <div className="text-2xl font-bold text-red-500">
+              ₹
+              {borrowerProfile.outstanding.toLocaleString()}
+            </div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">
+              Total Paid
+            </div>
+
+            <div className="text-2xl font-bold text-green-500">
+              ₹
+              {borrowerProfile.total_paid.toLocaleString()}
+            </div>
+          </div>
+
+        </div>
+{/* Timeline */}
+
+<div>
+
+  <h3 className="font-semibold mb-3">
+    Timeline
+  </h3>
+
+  <div className="space-y-2">
+
+    {borrowerProfile.loans.map(
+      (loan: any) => (
+        <div
+          key={`loan-${loan.id}`}
+          className="rounded-lg border p-3"
+        >
+          <div className="font-medium">
+            💰 Loan Created
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            Loan #{loan.id}
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            Due: {loan.due_date}
+          </div>
+        </div>
+      )
+    )}
+
+    {borrowerProfile.repayments.map(
+      (r: any) => (
+        <div
+          key={`repayment-${r.id}`}
+          className="rounded-lg border border-green-500/30 bg-green-500/5 p-3"
+        >
+          <div className="font-medium text-green-400">
+            ✅ Repayment Received
+          </div>
+
+          <div>
+            ₹{r.amount_paid.toLocaleString()}
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            {r.payment_date}
+          </div>
+        </div>
+      )
+    )}
+
+  </div>
+
+</div>
+      <div className="grid md:grid-cols-2 gap-6">
+<div>
+
+  <h3 className="font-semibold mb-3">
+    Documents
+  </h3>
+
+  {documents.length === 0 ? (
+
+    <div className="text-sm text-muted-foreground">
+      No documents uploaded
+    </div>
+
+  ) : (
+
+    documents.map(
+      (doc: any) => (
+
+        <div
+          key={doc.id}
+          className="mb-2 flex items-center justify-between rounded-lg border p-3"
+        >
+
+          <div>
+
+            <div className="font-medium">
+              📄 {doc.file_name}
+            </div>
+
+            <div className="text-xs text-muted-foreground">
+              {doc.document_type}
+            </div>
+
+          </div>
+
+         <div className="flex gap-2">
+
+  <Button
+    size="sm"
+    onClick={() =>
+      viewDocument(
+        doc.id
+      )
+    }
+  >
+    View
+  </Button>
+
+  <Button
+    size="sm"
+    variant="destructive"
+    onClick={() => {
+
+      if (
+        confirm(
+          "Delete this document?"
+        )
+      ) {
+        deleteDocumentMutation.mutate(
+          doc.id
+        );
+      }
+
+    }}
+  >
+    Delete
+  </Button>
+
+</div>
+
+        </div>
+      )
+    )
+
+  )}
+
+</div>
+  {/* Loans */}
+
+  <div>
+
+    <h3 className="font-semibold mb-3">
+      Loans
+    </h3>
+
+    {borrowerProfile.loans.map(
+      (loan: any) => (
+        <div
+          key={loan.id}
+          className="mb-2 rounded-lg border p-3"
+        >
+          <div className="font-medium">
+            LN-{String(loan.id).padStart(4, "0")}
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            Outstanding:
+            ₹
+            {loan.outstanding.toLocaleString()}
+          </div>
+        </div>
+      )
+    )}
+
+  </div>
+
+  {/* Repayment History */}
+
+  <div>
+
+    <h3 className="font-semibold mb-3">
+      Repayment History
+    </h3>
+
+    {borrowerProfile.repayments.map(
+      (r: any) => (
+        <div
+          key={r.id}
+          className="mb-2 rounded-lg border p-3"
+        >
+          <div>
+            ₹
+            {Number(
+              r.amount_paid
+            ).toLocaleString()}
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            {r.payment_date}
+          </div>
+        </div>
+      )
+    )}
+
+  </div>
+
+</div>
+
+      </div>
+    )}
+
+  </DialogContent>
+</Dialog>
+<Dialog
+  open={uploadOpen}
+  onOpenChange={
+    setUploadOpen
+  }
+>
+  <DialogContent>
+
+    <DialogHeader>
+      <DialogTitle>
+        Upload Document
+      </DialogTitle>
+    </DialogHeader>
+
+    <form
+      className="space-y-4"
+      onSubmit={(e) => {
+
+        e.preventDefault();
+
+        const form =
+          new FormData(
+            e.currentTarget
+          );
+
+        uploadDocumentMutation.mutate({
+          borrowerId:
+            selectedBorrower,
+          formData: form,
+        });
+      }}
+    >
+
+      <Input
+        name="document_type"
+        placeholder="Aadhaar / PAN / Agreement"
+        required
+      />
+
+      <Input
+        type="file"
+        name="file"
+        required
+      />
+
+      <Button type="submit">
+        Upload
+      </Button>
+
+    </form>
+
+  </DialogContent>
+</Dialog>
     </div>
   );
 }

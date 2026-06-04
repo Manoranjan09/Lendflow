@@ -1,12 +1,26 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-
+from openpyxl import Workbook
+from fastapi.responses import FileResponse
+import tempfile
 from app.db.database import get_db
 from app.models.borrower import Borrower
 from app.models.loan import Loan
 from app.models.repayment import Repayment
+from fastapi.responses import FileResponse
 
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer
+)
+
+from reportlab.lib.styles import (
+    getSampleStyleSheet
+)
+
+import tempfile
 from datetime import date, timedelta, datetime
 
 
@@ -593,4 +607,254 @@ def analytics_data(
         "portfolio_status": portfolio_status,
         "top_exposure": top_exposure[:5],
         "risky_accounts": top_exposure[:5]
+    }
+@router.get("/portfolio-report/{lender_id}")
+def portfolio_report(
+    lender_id: int,
+    db: Session = Depends(get_db)
+):
+    loans = (
+        db.query(Loan)
+        .filter(
+            Loan.lender_id == lender_id
+        )
+        .all()
+    )
+
+    borrowers = (
+        db.query(Borrower)
+        .filter(
+            Borrower.lender_id == lender_id
+        )
+        .all()
+    )
+
+    total_loans = len(loans)
+
+    total_lent = sum(
+        loan.principal_amount
+        for loan in loans
+    )
+
+    overdue_loans = sum(
+        1
+        for loan in loans
+        if loan.due_date < date.today()
+    )
+
+    temp_file = tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=".pdf"
+    )
+
+    doc = SimpleDocTemplate(
+        temp_file.name
+    )
+
+    styles = getSampleStyleSheet()
+
+    content = []
+
+    content.append(
+        Paragraph(
+            "CreditFlow AI",
+            styles["Title"]
+        )
+    )
+
+    content.append(
+        Paragraph(
+            "Portfolio Report",
+            styles["Heading2"]
+        )
+    )
+
+    content.append(
+        Spacer(1, 15)
+    )
+
+    content.append(
+        Paragraph(
+            f"Total Loans: {total_loans}",
+            styles["BodyText"]
+        )
+    )
+
+    content.append(
+        Paragraph(
+            f"Total Borrowers: {len(borrowers)}",
+            styles["BodyText"]
+        )
+    )
+
+    content.append(
+        Paragraph(
+            f"Total Lent: ₹{total_lent}",
+            styles["BodyText"]
+        )
+    )
+
+    content.append(
+        Paragraph(
+            f"Overdue Loans: {overdue_loans}",
+            styles["BodyText"]
+        )
+    )
+
+    content.append(
+        Spacer(1, 20)
+    )
+
+    content.append(
+        Paragraph(
+            "Top Borrowers",
+            styles["Heading3"]
+        )
+    )
+
+    for borrower in borrowers:
+
+        content.append(
+            Paragraph(
+                borrower.name,
+                styles["BodyText"]
+            )
+        )
+
+    content.append(
+        Spacer(1, 20)
+    )
+
+    content.append(
+        Paragraph(
+            "AI Portfolio Summary",
+            styles["Heading3"]
+        )
+    )
+
+    if overdue_loans > 0:
+
+        summary = (
+            "Portfolio contains overdue loans. "
+            "Follow-up recommended."
+        )
+
+    else:
+
+        summary = (
+            "Portfolio health is good."
+        )
+
+    content.append(
+        Paragraph(
+            summary,
+            styles["BodyText"]
+        )
+    )
+
+    doc.build(content)
+
+    return FileResponse(
+        temp_file.name,
+        media_type="application/pdf",
+        filename="portfolio_report.pdf"
+    )
+@router.get("/excel-report/{lender_id}")
+def export_excel_report(
+    lender_id: int,
+    db: Session = Depends(get_db)
+):
+    loans = (
+        db.query(Loan)
+        .filter(
+            Loan.lender_id == lender_id
+        )
+        .all()
+    )
+
+    wb = Workbook()
+    ws = wb.active
+
+    ws.title = "Loans"
+
+    ws.append([
+        "Loan ID",
+        "Borrower ID",
+        "Principal",
+        "Interest Rate",
+        "Issue Date",
+        "Due Date"
+    ])
+
+    for loan in loans:
+
+        ws.append([
+            f"LN-{str(loan.id).zfill(4)}",
+            loan.borrower_id,
+            loan.principal_amount,
+            loan.interest_rate,
+            str(loan.issue_date),
+            str(loan.due_date)
+        ])
+
+    temp_file = tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=".xlsx"
+    )
+
+    wb.save(temp_file.name)
+
+    return FileResponse(
+        temp_file.name,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename="loans_report.xlsx"
+    )
+@router.get("/public-stats/{lender_id}")
+def public_stats(
+    lender_id: int,
+    db: Session = Depends(get_db)
+):
+    borrowers = (
+        db.query(Borrower)
+        .filter(
+            Borrower.lender_id == lender_id
+        )
+        .count()
+    )
+
+    loans = (
+        db.query(Loan)
+        .filter(
+            Loan.lender_id == lender_id
+        )
+        .all()
+    )
+
+    total_portfolio = sum(
+        loan.principal_amount
+        for loan in loans
+    )
+
+    total_recovered = (
+        db.query(Repayment)
+        .join(
+            Loan,
+            Repayment.loan_id == Loan.id
+        )
+        .filter(
+            Loan.lender_id == lender_id
+        )
+        .all()
+    )
+
+    recovered_amount = sum(
+        r.amount_paid
+        for r in total_recovered
+    )
+
+    return {
+        "borrowers": borrowers,
+        "loans": len(loans),
+        "portfolio": total_portfolio,
+        "recovered": recovered_amount
     }

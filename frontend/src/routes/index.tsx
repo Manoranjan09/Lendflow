@@ -3,8 +3,9 @@ import { motion } from "motion/react";
 import { ArrowRight, BarChart3, Bot, Calculator, ShieldCheck, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/site-nav";
-import {getLandingInsight } from "@/lib/api/dashboard";
+import {getLandingInsight, getMonthlyTrend,} from "@/lib/api/dashboard";
 import { useQuery } from "@tanstack/react-query";
+import { getPublicStats } from "@/lib/api/dashboard";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -24,26 +25,43 @@ const features = [
   { icon: Zap, title: "Auto Reminders", desc: "Email, SMS and WhatsApp nudges before EMIs go overdue. No more manual chasing." },
 ];
 
-const stats = [
-  {
-    v: "100%",
-    l: "Automated Interest Calculation",
-  },
-  {
-    v: "24/7",
-    l: "AI Loan Assistant",
-  },
-  {
-    v: "Real-Time",
-    l: "Repayment Tracking",
-  },
-  {
-    v: "Smart",
-    l: "Risk Detection",
-  },
-];
 
 function Landing() {
+const lenderId = 4;
+const { data: publicStats } =
+  useQuery({
+    queryKey: [
+      "public-stats",
+      lenderId,
+    ],
+
+    queryFn: () =>
+      getPublicStats(
+        lenderId
+      ),
+  });
+  console.log("Public Stats:", publicStats);
+  const { data: insight } =
+  useQuery({
+    queryKey: [
+      "landing-insight",
+    ],
+
+    queryFn:
+      getLandingInsight,
+  });
+  const { data: monthlyTrend = [] } =
+  useQuery({
+    queryKey: [
+      "monthly-trend",
+      lenderId,
+    ],
+
+    queryFn: () =>
+      getMonthlyTrend(
+        lenderId
+      ),
+  });
   return (
     <div className="min-h-screen">
       <SiteNav />
@@ -119,30 +137,98 @@ function Landing() {
             <div className="glass rounded-3xl p-3 shadow-[0_30px_80px_-30px_oklch(0.05_0.02_240/0.9)]">
               <div className="rounded-2xl bg-background/80 p-6">
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  {stats.map((s) => (
-                    <div key={s.l} className="rounded-2xl border border-border/60 bg-card/60 p-4">
-                      <div className="font-display text-2xl font-semibold text-gradient">{s.v}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">{s.l}</div>
-                    </div>
-                  ))}
+                 {[
+  {
+    v: publicStats
+      ? `${publicStats.borrowers}`
+      : "0",
+
+    l: "Borrowers",
+  },
+
+  {
+    v: publicStats
+      ? `${publicStats.loans}`
+      : "0",
+
+    l: "Loans",
+  },
+
+  {
+    v: publicStats
+      ? `₹${Number(
+          publicStats.portfolio
+        ).toLocaleString()}`
+      : "₹0",
+
+    l: "Portfolio Value",
+  },
+
+  {
+    v: publicStats
+      ? `₹${Number(
+          publicStats.recovered
+        ).toLocaleString()}`
+      : "₹0",
+
+    l: "Recovered",
+  },
+].map((s) => (
+  <div
+    key={s.l}
+    className="rounded-2xl border border-border/60 bg-card/60 p-4"
+  >
+    <div className="font-display text-2xl font-semibold text-gradient">
+      {s.v}
+    </div>
+
+    <div className="mt-1 text-xs text-muted-foreground">
+      {s.l}
+    </div>
+  </div>
+))}
                 </div>
                 <div className="mt-6 grid gap-4 md:grid-cols-3">
                   <div className="rounded-2xl border border-border/60 bg-card/60 p-5 md:col-span-2">
                     <div className="mb-3 flex items-center justify-between">
-                      <div className="text-sm text-muted-foreground">Monthly earnings</div>
-                      <div className="text-xs text-primary">+18.4%</div>
+                      <div className="text-sm text-muted-foreground"> Monthly Interest Trend</div>
+                     <div className="text-xs text-primary">
+  Live Data
+</div>
                     </div>
                     <div className="flex h-32 items-end gap-2">
-                      {[40, 55, 38, 62, 70, 58, 82, 75, 90, 86, 95, 110].map((h, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ height: 0 }}
-                          animate={{ height: `${h}%` }}
-                          transition={{ duration: 0.8, delay: 0.3 + i * 0.04 }}
-                          className="flex-1 rounded-md bg-gradient-to-t from-primary/30 to-primary"
-                        />
-                      ))}
-                    </div>
+  {monthlyTrend.map(
+    (item: any, i: number) => {
+      const height =
+        item.profit > 0
+          ? Math.max(
+              item.profit / 1000,
+              10
+            )
+          : 5;
+
+      return (
+        <motion.div
+          key={item.m}
+          initial={{
+            height: 0,
+          }}
+          animate={{
+            height: `${Math.min(
+              height,
+              100
+            )}%`,
+          }}
+          transition={{
+            duration: 0.8,
+            delay: 0.3 + i * 0.04,
+          }}
+          className="flex-1 rounded-md bg-gradient-to-t from-primary/30 to-primary"
+        />
+      );
+    }
+  )}
+</div>
                   </div>
                   <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-accent/10 to-primary/10 p-5">
                    <Bot className="h-5 w-5 text-primary" />
@@ -152,9 +238,8 @@ function Landing() {
 </div>
 
 <p className="mt-1 text-xs text-muted-foreground">
-  AI detected an overdue borrower.
-  Suggested action:
-  Generate WhatsApp reminder.
+  {insight?.message ||
+    "Loading AI insight..."}
 </p>
 
                   </div>
@@ -226,17 +311,33 @@ function Landing() {
           </div>
         </div>
       </section>
+<footer className="border-t border-border/40 py-10">
+  <div className="container mx-auto max-w-7xl px-6">
 
-      <footer className="border-t border-border/40 py-10">
-        <div className="container mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 text-sm text-muted-foreground">
-          <div>© {new Date().getFullYear()} CreditFlow AI — Built for modern lenders.</div>
-          <div className="flex gap-5">
-            <a href="#features" className="hover:text-foreground">Features</a>
-            <Link to="/calculator" className="hover:text-foreground">Calculator</Link>
-            <Link to="/dashboard" className="hover:text-foreground">Dashboard</Link>
-          </div>
-        </div>
-      </footer>
+    <div className="flex flex-col items-center justify-between gap-4 text-sm md:flex-row">
+
+      <div className="text-muted-foreground">
+        © {new Date().getFullYear()} CreditFlow AI — Built for modern lenders.
+      </div>
+
+      <div className="text-muted-foreground">
+        Developed by{" "}
+        <span className="font-semibold text-foreground">
+          Manoranjan Kumar
+        </span>
+      </div>
+
+      <a
+        href="mailto:manoranjank6203@gmail.com"
+        className="font-medium text-primary hover:underline"
+      >
+        Contact Developer
+      </a>
+
+    </div>
+
+  </div>
+</footer>
     </div>
   );
 }

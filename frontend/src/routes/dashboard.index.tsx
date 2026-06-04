@@ -14,7 +14,12 @@ import {
   getMonthlyTrend,
   getDashboardAlerts,
 } from "@/lib/api/dashboard";
-
+import {
+  downloadPortfolioReport,
+} from "@/lib/api/dashboard";
+import {
+  downloadExcelReport,
+} from "@/lib/api/dashboard";
 export const Route = createFileRoute("/dashboard/")({
   component: Overview,
 });
@@ -161,15 +166,53 @@ const {
 });
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Overview</h1>
-          <p className="text-sm text-muted-foreground">Snapshot of your lending portfolio.</p>
-        </div>
-        <Button asChild className="bg-gradient-to-r from-primary to-accent text-primary-foreground glow hover:opacity-90">
-          <Link to="/dashboard/borrowers"><Plus className="mr-1.5 h-4 w-4" /> Add borrower</Link>
-        </Button>
-      </div>
+     <div className="flex flex-wrap items-end justify-between gap-3">
+
+  <div>
+    <h1 className="font-display text-3xl font-semibold tracking-tight">
+      Overview
+    </h1>
+
+    <p className="text-sm text-muted-foreground">
+      Snapshot of your lending portfolio.
+    </p>
+  </div>
+
+  <div className="flex gap-2">
+
+    <Button
+      onClick={() =>
+        downloadPortfolioReport(
+          lenderId
+        )
+      }
+      variant="outline"
+    >
+      📄 Export Report
+    </Button>
+<Button
+  onClick={() =>
+    downloadExcelReport(
+      lenderId
+    )
+  }
+  variant="outline"
+>
+  📊 Export Excel
+</Button>
+    <Button
+      asChild
+      className="bg-gradient-to-r from-primary to-accent text-primary-foreground glow hover:opacity-90"
+    >
+      <Link to="/dashboard/borrowers">
+        <Plus className="mr-1.5 h-4 w-4" />
+        Add Borrower
+      </Link>
+    </Button>
+
+  </div>
+
+</div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k, i) => (

@@ -4,25 +4,72 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  translations,
+} from "@/lib/translations";
+
+import {
+  getLanguage,
+} from "@/lib/language";
+import {
   getNotifications,
   generateReminder,
 } from "@/lib/api/dashboard";
 import { Button } from "@/components/ui/button";
-const nav = [
-  { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { to: "/dashboard/borrowers", label: "Borrowers", icon: Users },
-  { to: "/dashboard/loans", label: "Loans", icon: Calculator },
-  { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/calculator", label: "Calculators", icon: Calculator },
-  { to: "/dashboard/assistant", label: "AI Assistant", icon: Bot },
-  { to: "/dashboard/settings", label: "Settings", icon: Settings },
+const nav = (t: any) => [
+  {
+    to: "/dashboard",
+    label: t.overview,
+    icon: LayoutDashboard,
+  },
+
+  {
+    to: "/dashboard/borrowers",
+    label: t.borrowers,
+    icon: Users,
+  },
+
+  {
+    to: "/dashboard/loans",
+    label: t.loans,
+    icon: Calculator,
+  },
+
+  {
+    to: "/dashboard/analytics",
+    label: t.analytics,
+    icon: BarChart3,
+  },
+
+  {
+    to: "/calculator",
+    label: t.calculators,
+    icon: Calculator,
+  },
+
+  {
+    to: "/dashboard/assistant",
+    label: t.assistant,
+    icon: Bot,
+  },
+
+  {
+    to: "/dashboard/settings",
+    label: t.settings,
+    icon: Settings,
+  },
 ] as const;
 
 export function DashboardShell() {
   const path = useRouterState({
     select: (s) => s.location.pathname,
   });
+const language =
+  getLanguage();
 
+const t =
+  translations[
+    language as "en" | "hi"
+  ];
   const [showNotifications, setShowNotifications] =
     useState(false);
     const user = JSON.parse(
@@ -31,6 +78,16 @@ export function DashboardShell() {
 
 const lenderId =
   user?.dbUser?.id;
+
+const userPhoto =
+  user?.firebase?.photoURL ||
+  user?.firebase?.providerData?.[0]?.photoURL ||
+  null;
+
+const userName =
+  user?.dbUser?.name ||
+  user?.firebase?.displayName ||
+  "User";
 const [reminderText, setReminderText] =
   useState("");
   const {
@@ -52,14 +109,22 @@ const [reminderText, setReminderText] =
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl md:flex md:flex-col">
-        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent glow">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div className="font-display font-semibold tracking-tight">CreditFlow AI</div>
-        </div>
+     <div className="h-16 border-b border-sidebar-border px-5">
+  <Link
+    to="/"
+    className="flex h-full items-center gap-2 hover:opacity-80 transition-opacity"
+  >
+    <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent glow">
+      <Sparkles className="h-4 w-4 text-primary-foreground" />
+    </div>
+
+    <div className="font-display font-semibold tracking-tight">
+      CreditFlow AI
+    </div>
+  </Link>
+</div>
         <nav className="flex-1 space-y-1 p-3">
-          {nav.map((n) => {
+          {nav(t).map((n) => {
             const active = path === n.to;
             return (
               <Link
@@ -237,9 +302,22 @@ Thank you.`;
     </div>
   </div>
 )}
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-primary to-accent text-xs font-semibold text-primary-foreground">
-              AR
-            </div>
+  {userPhoto ? (
+  <img
+    src={userPhoto}
+    alt={userName}
+    className="h-10 w-10 rounded-full border border-border object-cover"
+  />
+) : (
+  <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-semibold text-primary-foreground">
+    {userName
+      .split(" ")
+      .map((n: string) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase()}
+  </div>
+)}
           </div>
         </header>
         <main className="flex-1 p-6 md:p-8">

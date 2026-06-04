@@ -80,10 +80,31 @@ export function getAnalytics(
   );
 }
 
-export function getLandingInsight(
+export function getLandingInsight() {
+  return apiFetch(
+    "/dashboard/landing-insight"
+  );
+}
+export function downloadPortfolioReport(
+  lenderId: number
+) {
+  window.open(
+    `http://localhost:8000/dashboard/portfolio-report/${lenderId}`,
+    "_blank"
+  );
+}
+export function downloadExcelReport(
+  lenderId: number
+) {
+  window.open(
+    `http://localhost:8000/dashboard/excel-report/${lenderId}`,
+    "_blank"
+  );
+}
+export function getPublicStats(
   lenderId: number
 ) {
   return apiFetch(
-    `/dashboard/landing-insight?lender_id=${lenderId}`
+    `/dashboard/public-stats/${lenderId}`
   );
 }

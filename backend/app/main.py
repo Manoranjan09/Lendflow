@@ -7,6 +7,7 @@ from app.api.repayments import router as repayment_router
 from app.api.dashboard import router as dashboard_router
 from app.api import users
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.settings import router as settings_router
 app = FastAPI(
     title="LendFlow AI"
 )
@@ -27,6 +28,7 @@ app.include_router(repayment_router)
 app.include_router(dashboard_router)
 app.include_router(assistant_router)
 app.include_router(users.router)
+app.include_router(settings_router)
 @app.get("/")
 def root():
     return {

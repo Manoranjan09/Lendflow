@@ -60,6 +60,10 @@ function LoansPage() {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [
+  statusFilter,
+  setStatusFilter
+] = useState("ALL");
   const [open, setOpen] = useState(false);
 const [selectedLoan, setSelectedLoan] =
   useState<number | null>(null);
@@ -149,10 +153,35 @@ const { data: loans = [] } =
     },
   });
 
-  const filtered = useMemo(() => {
+ const filtered = useMemo(() => {
   return loans.filter((loan: any) => {
+
     const borrowerName =
       borrowerMap.get(loan.borrower_id) || "";
+
+    const today = new Date();
+
+    const dueDate = new Date(
+      loan.due_date
+    );
+
+    const daysDiff = Math.ceil(
+      (dueDate.getTime() -
+        today.getTime()) /
+      (1000 * 60 * 60 * 24)
+    );
+
+    const status =
+      daysDiff < 0
+        ? "OVERDUE"
+        : "ACTIVE";
+
+    if (
+      statusFilter !== "ALL" &&
+      status !== statusFilter
+    ) {
+      return false;
+    }
 
     return (
       String(loan.id)
@@ -164,7 +193,12 @@ const { data: loans = [] } =
         .includes(search.toLowerCase())
     );
   });
-}, [loans, search, borrowerMap]);
+}, [
+  loans,
+  search,
+  borrowerMap,
+  statusFilter
+]);
 
   async function handleCreateLoan(form: FormData) {
     const borrower_id = Number(
@@ -562,18 +596,48 @@ const createRepaymentMutation =
     </div>
   </div>
 </div>
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+     <div className="flex gap-3">
 
-        <Input
-          className="pl-9"
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-         placeholder="Search by Loan ID or Borrower Name..."
-        />
-      </div>
+  <div className="relative flex-1">
+    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+
+    <Input
+      className="pl-9"
+      value={search}
+      onChange={(e) =>
+        setSearch(e.target.value)
+      }
+      placeholder="Search by Loan ID or Borrower Name..."
+    />
+  </div>
+
+  <Select
+    value={statusFilter}
+    onValueChange={
+      setStatusFilter
+    }
+  >
+    <SelectTrigger className="w-[180px]">
+      <SelectValue />
+    </SelectTrigger>
+
+    <SelectContent>
+      <SelectItem value="ALL">
+        All Loans
+      </SelectItem>
+
+      <SelectItem value="ACTIVE">
+        Active
+      </SelectItem>
+
+      <SelectItem value="OVERDUE">
+        Overdue
+      </SelectItem>
+    </SelectContent>
+
+  </Select>
+
+</div>
 
       <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/70">
         <table className="w-full">
@@ -585,10 +649,15 @@ const createRepaymentMutation =
               <th className="p-4 text-left">
                 Borrower 
               </th>
-              <th className="p-4 text-left">
-                Principal
-              </th>
-              <th className="p-4 text-left">
+             <th className="p-4 text-left">
+  Principal
+</th>
+
+<th className="p-4 text-left">
+  Outstanding
+</th>
+
+<th className="p-4 text-left">
   Rate
 </th>
 
@@ -601,6 +670,10 @@ const createRepaymentMutation =
 </th>
 
 <th className="p-4 text-left">
+  Days
+</th>
+
+<th className="p-4 text-left">
   Status
 </th>
             </tr>
@@ -609,7 +682,27 @@ const createRepaymentMutation =
           <tbody>
            
             {filtered.map(
-              (loan: any, i: number) => (
+  (loan: any, i: number) => {
+
+    const today =
+      new Date();
+
+    const dueDate =
+      new Date(loan.due_date);
+
+    const daysDiff =
+      Math.ceil(
+        (dueDate.getTime() -
+          today.getTime()) /
+        (1000 * 60 * 60 * 24)
+      );
+
+    const status =
+      daysDiff < 0
+        ? "OVERDUE"
+        : "ACTIVE";
+
+    return (
                  <motion.tr
   onClick={() =>
     setSelectedLoan(
@@ -642,14 +735,20 @@ const createRepaymentMutation =
 </td>
 
                   <td className="p-4">
-                    ₹
-                    {loan.principal_amount}
-                  </td>
-
-                  <td className="p-4">
-  {loan.interest_rate}%
+  ₹{Number(
+    loan.principal_amount
+  ).toLocaleString()}
 </td>
 
+<td className="p-4 font-medium text-amber-400">
+  ₹{Number(
+    loan.principal_amount
+  ).toLocaleString()}
+</td>
+
+<td className="p-4">
+  {loan.interest_rate}%
+</td>
 <td className="p-4">
   {new Date(
     loan.issue_date
@@ -663,15 +762,32 @@ const createRepaymentMutation =
 </td>
 
 <td className="p-4">
+  {daysDiff < 0 ? (
+    <span className="font-medium text-red-500">
+      {Math.abs(daysDiff)} Days Overdue
+    </span>
+  ) : (
+    <span className="font-medium text-green-500">
+      {daysDiff} Days Left
+    </span>
+  )}
+</td>
+
+<td className="p-4">
   <Badge
-    variant="outline"
+    className={
+      status === "OVERDUE"
+        ? "bg-red-500/15 text-red-500 border-red-500/30"
+        : "bg-green-500/15 text-green-500 border-green-500/30"
+    }
   >
-    Active
+    {status}
   </Badge>
 </td>
 </motion.tr>
-              )
-            )}
+    );
+  }
+)}
           </tbody>
         </table>
       </div>
