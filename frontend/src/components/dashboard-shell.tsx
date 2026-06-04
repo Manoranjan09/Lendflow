@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   translations,
 } from "@/lib/translations";
-
+import { AIFab } from "@/components/ai-fab";
 import {
   getLanguage,
 } from "@/lib/language";
@@ -323,6 +323,7 @@ Thank you.`;
         <main className="flex-1 p-6 md:p-8">
           <Outlet />
         </main>
+        
       </div>
     </div>
   );

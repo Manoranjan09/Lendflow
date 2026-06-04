@@ -7,6 +7,12 @@ import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
 import { chatWithAssistant } from "@/lib/api/assistant";
 
+import {
+  getDashboardStats,
+} from "@/lib/api/dashboard";
+
+import { useQuery } from "@tanstack/react-query";
+
 export const Route = createFileRoute(
   "/dashboard/assistant"
 )({
@@ -16,6 +22,7 @@ export const Route = createFileRoute(
 type Msg = {
   role: "user" | "ai";
   text: string;
+  time: string;
 };
 
 const SUGGESTIONS = [
@@ -28,16 +35,41 @@ const SUGGESTIONS = [
 function Assistant() {
   const [messages, setMessages] =
     useState<Msg[]>([
-      {
-        role: "ai",
-        text:
-          "Welcome to CreditFlow AI 👋. I can help you analyze borrowers, loans, repayments, interest, profit, overdue accounts, and portfolio risk.",
-      },
+    {
+  role: "ai",
+  text:
+    "Welcome to CreditFlow AI 👋. I can help you analyze borrowers, loans, repayments, interest, profit, overdue accounts, and portfolio risk.",
+  time: new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  }),
+}
     ]);
 
   const [input, setInput] =
     useState("");
+const user = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
 
+const lenderId =
+  user?.dbUser?.id;
+
+const {
+  data: stats,
+} = useQuery({
+  queryKey: [
+    "dashboard-stats",
+    lenderId,
+  ],
+
+  queryFn: () =>
+    getDashboardStats(
+      lenderId
+    ),
+
+  enabled: !!lenderId,
+});
   const chatMutation =
     useMutation({
       mutationFn: chatWithAssistant,
@@ -50,13 +82,17 @@ function Assistant() {
 
     if (!q) return;
 
-    setMessages((m) => [
-      ...m,
-      {
-        role: "user",
-        text: q,
-      },
-    ]);
+   setMessages((m) => [
+  ...m,
+  {
+    role: "user",
+    text: q,
+    time: new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  },
+]);
 
     setInput("");
 
@@ -68,12 +104,16 @@ function Assistant() {
 
       setMessages((m) => [
         ...m,
-        {
-          role: "ai",
-          text:
-            response.answer ??
-            "No response received.",
-        },
+       {
+  role: "ai",
+  text:
+    response.answer ??
+    "No response received.",
+  time: new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  }),
+},
       ]);
     } catch {
       setMessages((m) => [
@@ -104,8 +144,59 @@ function Assistant() {
           </p>
         </div>
       </div>
+<div className="mb-3 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 p-3">
 
-      <div className="flex-1 overflow-y-auto rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
+  <div className="text-xs font-medium uppercase tracking-wider text-primary">
+  Portfolio Overview
+</div>
+ <div className="mt-2 grid gap-2 md:grid-cols-4">
+
+    <div className="rounded-lg border border-border/50 p-2">
+     <div className="text-[11px] text-muted-foreground">
+        Borrowers
+      </div>
+
+     <div className="mt-0.5 text-lg font-semibold">
+        {stats?.total_borrowers || 0}
+      </div>
+    </div>
+
+    <div className="rounded-lg border border-border/50 p-2">
+    <div className="text-[11px] text-muted-foreground">
+        Loans
+      </div>
+
+     <div className="mt-0.5 text-lg font-semibold">
+        {stats?.total_loans || 0}
+      </div>
+    </div>
+
+    <div className="rounded-lg border border-border/50 p-2">
+     <div className="text-[11px] text-muted-foreground">
+        Lent
+      </div>
+
+     <div className="mt-0.5 text-lg font-semibold">
+        ₹{Number(
+          stats?.total_lent || 0
+        ).toLocaleString()}
+      </div>
+    </div>
+
+    <div className="rounded-lg border border-border/50 p-2">
+     <div className="text-[11px] text-muted-foreground">
+        Overdue
+      </div>
+
+      <div className="mt-1 text-xl font-semibold text-red-400">
+        {stats?.overdue_loans || 0}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+      <div className="h-[420px] overflow-y-auto rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
         <div className="space-y-4">
           {messages.map(
             (m, i) => (
@@ -131,15 +222,33 @@ function Assistant() {
                   </div>
                 )}
 
-                <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    m.role === "user"
-                      ? "bg-gradient-to-br from-primary to-accent text-primary-foreground"
-                      : "border border-border/60 bg-background/60"
-                  }`}
-                >
-                  {m.text}
-                </div>
+              <div
+  className={`min-w-[120px] max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+    m.role === "user"
+      ? "bg-gradient-to-br from-primary to-accent text-primary-foreground"
+      : "border border-primary/20 bg-card/70 backdrop-blur"
+  }`}
+>
+  <div className="mb-2 flex items-center justify-between">
+
+  {m.role === "ai" ? (
+    <div className="text-[10px] uppercase tracking-wider text-primary">
+      CreditFlow AI
+    </div>
+  ) : (
+    <div className="text-[10px] uppercase tracking-wider opacity-70">
+      You
+    </div>
+  )}
+
+  <div className="text-[10px] opacity-60">
+    {m.time}
+  </div>
+
+</div>
+
+  {m.text}
+</div>
 
                 {m.role === "user" && (
                   <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-secondary">
@@ -164,19 +273,73 @@ function Assistant() {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {SUGGESTIONS.map((s) => (
-          <button
-            key={s}
-            onClick={() =>
-              send(s)
-            }
-            className="rounded-full border border-border/60 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground"
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+     <div className="mt-4 grid gap-3 md:grid-cols-2">
+
+  {[
+    {
+      title: "Portfolio Summary",
+      icon: "📈",
+      prompt: "Give me portfolio summary",
+    },
+
+    {
+      title: "Overdue Borrowers",
+      icon: "⚠️",
+      prompt: "Which borrowers are overdue?",
+    },
+
+    {
+      title: "Interest Analysis",
+      icon: "💰",
+      prompt: "How much compound interest accumulated?",
+    },
+
+    {
+      title: "Collection Forecast",
+      icon: "🧠",
+      prompt: "Predict next month's collections",
+    },
+  ].map((card) => (
+    <button
+      key={card.title}
+      onClick={() =>
+        send(card.prompt)
+      }
+     className="
+  flex
+  items-center
+  gap-3
+  rounded-xl
+  border
+  border-border/60
+  bg-card/50
+  px-4
+  py-3
+  text-left
+  transition
+  hover:border-primary/40
+  hover:bg-card
+"
+    >
+     <div className="text-xl">
+  {card.icon}
+</div>
+
+<div>
+  <div className="font-medium text-sm">
+    {card.title}
+  </div>
+
+ <div className="text-[11px] text-muted-foreground">
+    
+    Ask AI instantly
+  </div>
+</div>
+    </button>
+  ))}
+
+</div>
+      
 
       <form
         onSubmit={(e) => {

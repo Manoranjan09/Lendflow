@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { AIFab } from "@/components/ai-fab";
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
@@ -108,7 +109,14 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
-      <Toaster richColors theme="dark" position="top-right" />
+
+      <AIFab />
+
+      <Toaster
+        richColors
+        theme="dark"
+        position="top-right"
+      />
     </QueryClientProvider>
   );
 }

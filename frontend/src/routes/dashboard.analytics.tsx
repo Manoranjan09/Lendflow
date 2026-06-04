@@ -195,7 +195,21 @@ const riskyAccounts =
                 <Pie data={byStatus} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={4}>
                   {byStatus.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip contentStyle={{ background: "oklch(0.20 0.03 250)", border: "1px solid oklch(0.30 0.03 252)", borderRadius: 12 }} />
+              <Tooltip
+  contentStyle={{
+    background: "oklch(0.20 0.03 250)",
+    border: "1px solid oklch(0.30 0.03 252)",
+    borderRadius: 12,
+    color: "#ffffff",
+  }}
+  itemStyle={{
+    color: "#ffffff",
+    fontWeight: 600,
+  }}
+  labelStyle={{
+    color: "#ffffff",
+  }}
+/>
               </PieChart>
             </ResponsiveContainer>
           </div>
