@@ -17,15 +17,43 @@ export const Route = createFileRoute("/")({
 });
 
 const features = [
-  { icon: Users, title: "Borrower CRM", desc: "Onboard borrowers, store KYC, notes and full repayment history in one place." },
-  { icon: TrendingUp, title: "Smart Interest Engine", desc: "Simple, compound, daily or monthly — recalculated automatically on every change." },
-  { icon: Bot, title: "AI Financial Assistant", desc: "Ask plain‑English questions about profit, overdue accounts, and risk in seconds." },
-  { icon: BarChart3, title: "Live Analytics", desc: "Monthly earnings, recovery rate, overdue exposure — visualised beautifully." },
-  { icon: ShieldCheck, title: "Role‑based Security", desc: "Borrowers see only their account. Encrypted storage, OTP login, activity logs." },
-  { icon: Zap, title: "Auto Reminders", desc: "Email, SMS and WhatsApp nudges before EMIs go overdue. No more manual chasing." },
+  {
+    icon: Users,
+    title: "Borrower CRM",
+    desc: "Onboard borrowers, store KYC, notes and repayment history.",
+    badge: "Core",
+  },
+  {
+    icon: TrendingUp,
+    title: "Smart Interest Engine",
+    desc: "Automatic simple and compound interest calculations.",
+    badge: "Popular",
+  },
+  {
+    icon: Bot,
+    title: "AI Financial Assistant",
+    desc: "Get instant portfolio insights and risk analysis.",
+    badge: "AI",
+  },
+  {
+    icon: BarChart3,
+    title: "Live Analytics",
+    desc: "Monitor lending performance in real time.",
+    badge: "Live",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Role-Based Security",
+    desc: "Secure borrower data and access control.",
+    badge: "Secure",
+  },
+  {
+    icon: Zap,
+    title: "Auto Reminders",
+    desc: "Send repayment reminders automatically.",
+    badge: "Automation",
+  },
 ];
-
-
 function Landing() {
 const lenderId = 4;
 const { data: publicStats } =
@@ -199,33 +227,43 @@ const { data: publicStats } =
                     <div className="flex h-32 items-end gap-2">
   {monthlyTrend.map(
     (item: any, i: number) => {
-      const height =
-        item.profit > 0
-          ? Math.max(
-              item.profit / 1000,
-              10
-            )
-          : 5;
+      const maxProfit = Math.max(
+  ...monthlyTrend.map(
+    (x: any) => x.profit
+  ),
+  1
+);
 
-      return (
-        <motion.div
-          key={item.m}
-          initial={{
-            height: 0,
-          }}
-          animate={{
-            height: `${Math.min(
-              height,
-              100
-            )}%`,
-          }}
-          transition={{
-            duration: 0.8,
-            delay: 0.3 + i * 0.04,
-          }}
-          className="flex-1 rounded-md bg-gradient-to-t from-primary/30 to-primary"
-        />
-      );
+const height =
+  item.profit > 0
+    ? Math.max(
+        (item.profit / maxProfit) * 100,
+        15
+      )
+    : 5;
+
+     return (
+  <div
+  key={item.m}
+  className="flex flex-1 flex-col items-center justify-end h-full"
+>
+    <motion.div
+      initial={{ height: 0 }}
+      animate={{
+        height: `${height}%`,
+      }}
+      transition={{
+        duration: 0.8,
+        delay: 0.3 + i * 0.04,
+      }}
+    className="w-full rounded-md bg-gradient-to-t from-primary/30 to-primary min-h-[8px]"
+    />
+
+    <div className="mt-2 text-[10px] text-muted-foreground">
+      {item.m}
+    </div>
+  </div>
+);
     }
   )}
 </div>
@@ -270,23 +308,108 @@ const { data: publicStats } =
               <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary group-hover:from-primary/30 group-hover:to-accent/30">
                 <f.icon className="h-5 w-5" />
               </div>
-              <h3 className="mt-4 font-display text-lg font-semibold">{f.title}</h3>
+             <div className="mt-4 flex items-center justify-between">
+  <h3 className="font-display text-lg font-semibold">
+    {f.title}
+  </h3>
+
+  <span className="rounded-full border border-primary/30 px-2 py-1 text-[10px] text-primary">
+    {f.badge}
+  </span>
+</div>
               <p className="mt-1.5 text-sm text-muted-foreground">{f.desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
+<section className="container mx-auto max-w-7xl px-6 pb-24">
+  <div className="mb-12 text-center">
+    <div className="text-xs uppercase tracking-widest text-primary">
+      Why CreditFlow AI
+    </div>
 
+    <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">
+      Built specifically for lenders.
+    </h2>
+
+    <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
+      Traditional spreadsheets can't track risk, overdue loans,
+      borrower history and portfolio growth efficiently.
+      CreditFlow AI does it automatically.
+    </p>
+  </div>
+
+  <div className="grid gap-6 md:grid-cols-4">
+    <div className="rounded-3xl border border-border/60 bg-card/60 p-6">
+      <div className="text-3xl font-bold text-primary">
+        100%
+      </div>
+
+      <div className="mt-2 text-sm text-muted-foreground">
+        Automated interest calculations
+      </div>
+    </div>
+
+    <div className="rounded-3xl border border-border/60 bg-card/60 p-6">
+      <div className="text-3xl font-bold text-primary">
+        AI
+      </div>
+
+      <div className="mt-2 text-sm text-muted-foreground">
+        Portfolio risk detection
+      </div>
+    </div>
+
+    <div className="rounded-3xl border border-border/60 bg-card/60 p-6">
+      <div className="text-3xl font-bold text-primary">
+        Live
+      </div>
+
+      <div className="mt-2 text-sm text-muted-foreground">
+        Analytics & borrower tracking
+      </div>
+    </div>
+
+    <div className="rounded-3xl border border-border/60 bg-card/60 p-6">
+      <div className="text-3xl font-bold text-primary">
+        Smart
+      </div>
+
+      <div className="mt-2 text-sm text-muted-foreground">
+        Reminders & recovery actions
+      </div>
+    </div>
+  </div>
+</section>
       {/* How it works */}
       <section id="how" className="container mx-auto max-w-7xl px-6 pb-28">
         <div className="glass rounded-3xl p-10 md:p-14">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
               <div className="text-xs uppercase tracking-widest text-primary">How it works</div>
-              <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">From handshake to repaid — automated.</h2>
+              <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">From borrower onboarding
+to loan recovery — automated.</h2>
               <p className="mt-4 text-muted-foreground">
-                Add a borrower, set the interest type & rate, and CreditFlow tracks every rupee. AI compounds, calculates penalties, and predicts risk so you can focus on growth.
+               Manage the entire lending lifecycle from borrower onboarding and loan issuance to repayment tracking, risk monitoring and portfolio reporting — all from a single dashboard.
               </p>
+              <div className="mt-6 flex flex-wrap gap-2 text-xs">
+  {[
+    "Borrower",
+    "Loan",
+    "Interest",
+    "Repayment",
+    "AI Analysis",
+    "Report"
+  ].map((item) => (
+    <span
+      key={item}
+      className="rounded-full border border-border/60 px-3 py-1"
+    >
+      {item}
+    </span>
+  ))}
+</div>
+
               <div className="mt-6 flex gap-3">
                 <Button asChild className="bg-gradient-to-r from-primary to-accent text-primary-foreground glow hover:opacity-90">
                   <Link to="/dashboard">Open dashboard <ArrowRight className="ml-1.5 h-4 w-4" /></Link>
@@ -295,10 +418,10 @@ const { data: publicStats } =
             </div>
             <ol className="space-y-4">
               {[
-                "Add borrower & loan amount with interest type",
-                "Engine tracks time, interest & penalties automatically",
-                "AI assistant surfaces overdue, risky & top accounts",
-                "Send reminders, collect payments, see profit grow",
+                "Create borrower profile and upload KYC documents",
+                "Issue loans with simple or compound interest rules",
+                "Track repayments, overdue accounts and portfolio health",
+                "Generate AI insights, reports and recovery actions",
               ].map((step, i) => (
                 <li key={step} className="flex gap-4 rounded-2xl border border-border/60 bg-card/60 p-4">
                   <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent font-display text-sm font-semibold text-primary-foreground">
