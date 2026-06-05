@@ -1,5 +1,9 @@
 import { apiFetch } from "./client";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:8000";
+
 export function getDashboardStats(
   lenderId: number
 ) {
@@ -87,22 +91,25 @@ export function getLandingInsight(
     `/dashboard/landing-insight?lender_id=${lenderId}`
   );
 }
+
 export function downloadPortfolioReport(
   lenderId: number
 ) {
   window.open(
-    `http://localhost:8000/dashboard/portfolio-report/${lenderId}`,
+    `${API_BASE_URL}/dashboard/portfolio-report/${lenderId}`,
     "_blank"
   );
 }
+
 export function downloadExcelReport(
   lenderId: number
 ) {
   window.open(
-    `http://localhost:8000/dashboard/excel-report/${lenderId}`,
+    `${API_BASE_URL}/dashboard/excel-report/${lenderId}`,
     "_blank"
   );
 }
+
 export function getPublicStats(
   lenderId: number
 ) {
