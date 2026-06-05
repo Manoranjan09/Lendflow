@@ -65,20 +65,20 @@ def dashboard_stats(
     db: Session = Depends(get_db)
 ):
     total_borrowers = (
-    db.query(Borrower)
-    .filter(
-        Borrower.lender_id == lender_id
+        db.query(Borrower)
+        .filter(
+            Borrower.lender_id == lender_id
+        )
+        .count()
     )
-    .count()
-)
 
     loans = (
-    db.query(Loan)
-    .filter(
-        Loan.lender_id == lender_id
+        db.query(Loan)
+        .filter(
+            Loan.lender_id == lender_id
+        )
+        .all()
     )
-    .all()
-)
 
     total_loans = len(loans)
 
@@ -88,27 +88,55 @@ def dashboard_stats(
     )
 
     total_collected = (
-        db.query(
-            func.coalesce(
-                func.sum(Repayment.amount_paid),
-                0
-            )
-        ).scalar()
+    db.query(
+        func.coalesce(
+            func.sum(
+                Repayment.amount_paid
+            ),
+            0
+        )
     )
+    .join(
+        Loan,
+        Repayment.loan_id == Loan.id
+    )
+    .filter(
+        Loan.lender_id == lender_id
+    )
+    .scalar()
+)
 
     active_loans = sum(
         1 for loan in loans
         if loan.status == "ACTIVE"
     )
 
+    today = date.today()
+
     overdue_loans = sum(
-        1 for loan in loans
-        if loan.status == "OVERDUE"
-    )
+    1
+    for loan in loans
+    if loan.due_date < today
+    and loan.status != "PAID"
+)
 
     paid_loans = sum(
         1 for loan in loans
         if loan.status == "PAID"
+    )
+
+    print("====== LOANS ======")
+
+    for loan in loans:
+        print(
+            loan.id,
+            loan.status,
+            loan.due_date
+        )
+
+    print(
+        "Overdue Count:",
+        overdue_loans
     )
 
     outstanding_balance = (
@@ -145,21 +173,32 @@ def dashboard_insights(
     )
 
     total_collected = (
-        db.query(
-            func.coalesce(
-                func.sum(
-                    Repayment.amount_paid
-                ),
-                0
-            )
-        ).scalar()
+    db.query(
+        func.coalesce(
+            func.sum(
+                Repayment.amount_paid
+            ),
+            0
+        )
     )
+    .join(
+        Loan,
+        Repayment.loan_id == Loan.id
+    )
+    .filter(
+        Loan.lender_id == lender_id
+    )
+    .scalar()
+)
+
+    today = date.today()
 
     overdue_loans = sum(
-        1
-        for loan in loans
-        if loan.status == "OVERDUE"
-    )
+    1
+    for loan in loans
+    if loan.due_date < today
+    and loan.status != "PAID"
+)
 
     return {
         "overdue_loans": overdue_loans,
@@ -272,6 +311,7 @@ def weekly_repayments(
     return days
 @router.get("/monthly-trend")
 def monthly_trend(
+    lender_id: int,
     db: Session = Depends(get_db)
 ):
     months = [
@@ -287,19 +327,20 @@ def monthly_trend(
     for month_index in range(1, 13):
 
         loans = (
-            db.query(Loan)
-            .filter(
-                func.extract(
-                    "year",
-                    Loan.issue_date
-                ) == current_year,
-                func.extract(
-                    "month",
-                    Loan.issue_date
-                ) == month_index
-            )
-            .all()
-        )
+    db.query(Loan)
+    .filter(
+        Loan.lender_id == lender_id,
+        func.extract(
+            "year",
+            Loan.issue_date
+        ) == current_year,
+        func.extract(
+            "month",
+            Loan.issue_date
+        ) == month_index
+    )
+    .all()
+)
 
         lent = sum(
             loan.principal_amount
@@ -402,7 +443,17 @@ def analytics(
         .all()
     )
     
-    repayments = db.query(Repayment).all()
+    repayments = (
+    db.query(Repayment)
+    .join(
+        Loan,
+        Repayment.loan_id == Loan.id
+    )
+    .filter(
+        Loan.lender_id == lender_id
+    )
+    .all()
+)
 
     months = {
         "Jan": {"month": "Jan", "interest": 0, "recovered": 0},
@@ -498,11 +549,13 @@ def notifications(
 
 @router.get("/landing-insight")
 def landing_insight(
+    lender_id: int,
     db: Session = Depends(get_db)
 ):
     overdue = (
         db.query(Loan)
         .filter(
+            Loan.lender_id == lender_id,
             Loan.status == "OVERDUE"
         )
         .first()
@@ -555,22 +608,36 @@ def analytics_data(
         )
         .all()
     )
+    today = date.today()
 
+    for loan in loans:
+
+     if (
+        loan.status != "PAID"
+        and loan.due_date < today
+    ):
+        loan.status = "OVERDUE"
+
+    db.commit()
     portfolio_status = [
         {
-            "name": "ACTIVE",
-            "value": sum(
-                1 for loan in loans
-                if loan.status == "ACTIVE"
-            )
-        },
+    "name": "ACTIVE",
+    "value": sum(
+        1
+        for loan in loans
+        if loan.status == "ACTIVE"
+        and loan.due_date >= date.today()
+    )
+},
         {
-            "name": "OVERDUE",
-            "value": sum(
-                1 for loan in loans
-                if loan.status == "OVERDUE"
-            )
-        },
+    "name": "OVERDUE",
+    "value": sum(
+        1
+        for loan in loans
+        if loan.due_date < date.today()
+        and loan.status != "PAID"
+    )
+},
         {
             "name": "PAID",
             "value": sum(

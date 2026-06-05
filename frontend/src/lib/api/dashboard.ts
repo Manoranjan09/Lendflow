@@ -80,9 +80,11 @@ export function getAnalytics(
   );
 }
 
-export function getLandingInsight() {
+export function getLandingInsight(
+  lenderId: number
+) {
   return apiFetch(
-    "/dashboard/landing-insight"
+    `/dashboard/landing-insight?lender_id=${lenderId}`
   );
 }
 export function downloadPortfolioReport(

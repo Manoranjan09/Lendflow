@@ -6,6 +6,13 @@ import { SiteNav } from "@/components/site-nav";
 import {getLandingInsight, getMonthlyTrend,} from "@/lib/api/dashboard";
 import { useQuery } from "@tanstack/react-query";
 import { getPublicStats } from "@/lib/api/dashboard";
+import { useState, useEffect} from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -54,8 +61,20 @@ const features = [
     badge: "Automation",
   },
 ];
+
 function Landing() {
-const lenderId = 4;
+const [lenderId, setLenderId] =
+  useState<number | undefined>();
+
+useEffect(() => {
+  const user = JSON.parse(
+    localStorage.getItem("user") || "{}"
+  );
+
+  setLenderId(
+    user?.dbUser?.id
+  );
+}, []);
 const { data: publicStats } =
   useQuery({
     queryKey: [
@@ -63,27 +82,40 @@ const { data: publicStats } =
       lenderId,
     ],
 
+    enabled: !!lenderId,
+
     queryFn: () =>
       getPublicStats(
         lenderId
       ),
   });
   console.log("Public Stats:", publicStats);
-  const { data: insight } =
+ const { data: insight } =
   useQuery({
     queryKey: [
       "landing-insight",
+      lenderId,
     ],
 
-    queryFn:
-      getLandingInsight,
+    enabled: !!lenderId,
+
+    queryFn: () =>
+      getLandingInsight(
+        lenderId
+      ),
   });
-  const { data: monthlyTrend = [] } =
+  const [guideOpen, setGuideOpen] =
+  useState(false);
+  const [aboutOpen, setAboutOpen] =
+  useState(false);
+ const { data: monthlyTrend = [] } =
   useQuery({
     queryKey: [
       "monthly-trend",
       lenderId,
     ],
+
+    enabled: !!lenderId,
 
     queryFn: () =>
       getMonthlyTrend(
@@ -91,6 +123,7 @@ const { data: publicStats } =
       ),
   });
   return (
+     <>
     <div className="min-h-screen">
       <SiteNav />
 
@@ -410,11 +443,25 @@ to loan recovery — automated.</h2>
   ))}
 </div>
 
-              <div className="mt-6 flex gap-3">
-                <Button asChild className="bg-gradient-to-r from-primary to-accent text-primary-foreground glow hover:opacity-90">
-                  <Link to="/dashboard">Open dashboard <ArrowRight className="ml-1.5 h-4 w-4" /></Link>
-                </Button>
-              </div>
+             <div className="mt-6 flex flex-wrap gap-3">
+  <Button
+    asChild
+    className="bg-gradient-to-r from-primary to-accent text-primary-foreground glow hover:opacity-90"
+  >
+    <Link to="/dashboard">
+      Open Dashboard
+      <ArrowRight className="ml-1.5 h-4 w-4" />
+    </Link>
+  </Button>
+
+  <Button
+    variant="outline"
+    onClick={() => setGuideOpen(true)}
+    className="border-primary/20 hover:border-primary/40"
+  >
+    📘 User Guide
+  </Button>
+</div>
             </div>
             <ol className="space-y-4">
               {[
@@ -450,17 +497,195 @@ to loan recovery — automated.</h2>
         </span>
       </div>
 
-      <a
-        href="mailto:manoranjank6203@gmail.com"
-        className="font-medium text-primary hover:underline"
-      >
-        Contact Developer
-      </a>
+      <div className="flex gap-2">
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setAboutOpen(true)}
+        >
+          🚀 About & Roadmap
+        </Button>
+
+        <a
+          href="mailto:manoranjank6203@gmail.com"
+          className="font-medium text-primary hover:underline flex items-center"
+        >
+          Contact Developer
+        </a>
+
+      </div>
 
     </div>
 
   </div>
 </footer>
+
+</div>
+
+{/* USER GUIDE */}
+<Dialog
+  open={guideOpen}
+  onOpenChange={setGuideOpen}
+>
+  <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+
+    <DialogHeader>
+      <DialogTitle>
+        📘 CreditFlow Complete User Guide (English + हिंदी)
+      </DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-6 text-sm">
+      <p>
+        CreditFlow helps manage borrowers, loans,
+        repayments, analytics, overdue accounts and AI insights.
+      </p>
+
+      <p>
+        CreditFlow Borrowers, Loans, Repayments,
+        Analytics, Overdue Accounts और AI Insights
+        को Manage करने में मदद करता है।
+      </p>
+
+      <p>
+        Use the Dashboard to monitor all lending activity,
+        create loans, record repayments and generate reports.
+      </p>
+
+      <p>
+        Dashboard से सभी Loans, Repayments,
+        Reports और Analytics को Manage करें।
+      </p>
+
+      <p>
+        AI Assistant can answer questions about profit,
+        recovery, risky accounts and portfolio performance.
+      </p>
+
+      <p>
+        AI Assistant Profit, Recovery,
+        Risky Accounts और Portfolio Analysis
+        में मदद करता है।
+      </p>
     </div>
-  );
+
+  </DialogContent>
+</Dialog>
+
+{/* ABOUT & ROADMAP */}
+<Dialog
+  open={aboutOpen}
+  onOpenChange={setAboutOpen}
+>
+  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+
+    <DialogHeader>
+      <DialogTitle>
+        🚀 About CreditFlow AI
+      </DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-6 text-sm leading-7">
+
+      <div>
+        <h3 className="font-semibold text-primary">
+          Developed By
+        </h3>
+
+        <p>
+          CreditFlow AI was designed and developed by
+          <strong> Manoranjan Kumar </strong>
+          as a modern AI-powered Loan &
+          Interest Management Platform.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-primary">
+          Vision
+        </h3>
+
+        <p>
+          To simplify lending operations for individual lenders,
+          financial advisors and small finance businesses using
+          automation and artificial intelligence.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-primary">
+          Current Features
+        </h3>
+
+        <ul className="ml-6 list-disc">
+          <li>Borrower Management</li>
+          <li>Loan Creation</li>
+          <li>Interest Calculation</li>
+          <li>Repayment Tracking</li>
+          <li>Overdue Detection</li>
+          <li>AI Assistant</li>
+          <li>Analytics Dashboard</li>
+          <li>PDF Reports</li>
+          <li>Excel Export</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-primary">
+          Upcoming Features
+        </h3>
+
+        <ul className="ml-6 list-disc">
+          <li>WhatsApp Loan Reminders</li>
+          <li>SMS Notifications</li>
+          <li>Email Reports</li>
+          <li>AI Collection Prediction</li>
+          <li>EMI Management</li>
+          <li>Multi-Lender Support</li>
+          <li>Credit Risk Scoring</li>
+          <li>Document Upload System</li>
+          <li>Cloud Backup</li>
+          <li>Mobile App</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-primary">
+          Technology Stack
+        </h3>
+
+        <ul className="ml-6 list-disc">
+          <li>React + TypeScript</li>
+          <li>TanStack Router</li>
+          <li>FastAPI</li>
+          <li>PostgreSQL</li>
+          <li>SQLAlchemy</li>
+          <li>OpenAI AI Assistant</li>
+          <li>Recharts Analytics</li>
+        </ul>
+      </div>
+
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+
+        <h3 className="font-semibold text-primary">
+          Future Goal
+        </h3>
+
+        <p>
+          Transform CreditFlow AI into a complete
+          digital lending ecosystem with intelligent
+          risk analysis, automated collections,
+          borrower credit scoring and AI-powered decision support.
+        </p>
+
+      </div>
+
+    </div>
+
+  </DialogContent>
+</Dialog>
+
+  </>
+);
 }
