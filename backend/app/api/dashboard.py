@@ -611,7 +611,6 @@ def analytics_data(
     today = date.today()
 
     for loan in loans:
-
      if (
         loan.status != "PAID"
         and loan.due_date < today
