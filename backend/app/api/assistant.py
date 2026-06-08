@@ -17,6 +17,7 @@ router = APIRouter(
 
 class ChatRequest(BaseModel):
     message: str
+    lender_id: int
 
 
 @router.post("/chat")
@@ -24,9 +25,30 @@ def assistant_chat(
     data: ChatRequest,
     db: Session = Depends(get_db)
 ):
-    borrowers = db.query(Borrower).all()
-    loans = db.query(Loan).all()
-    repayments = db.query(Repayment).all()
+    borrowers = (
+    db.query(Borrower)
+    .filter(
+        Borrower.lender_id ==
+        data.lender_id
+    )
+    .all()
+)
+    loans = (
+    db.query(Loan)
+    .filter(
+        Loan.lender_id ==
+        data.lender_id
+    )
+    .all()
+)
+    repayments = (
+    db.query(Repayment)
+    .filter(
+        Repayment.lender_id ==
+        data.lender_id
+    )
+    .all()
+)
 
     # =========================
     # Portfolio Metrics
