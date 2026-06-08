@@ -260,7 +260,7 @@ const {
                 <YAxis stroke="oklch(0.70 0.02 250)" fontSize={12} tickFormatter={(v) => `${v / 1000}k`} />
                 <Tooltip
                   contentStyle={{ background: "oklch(0.20 0.03 250)", border: "1px solid oklch(0.30 0.03 252)", borderRadius: 12 }}
-                  formatter={(v: number) => fmtINR(v)}
+                  formatter={(value) => fmtINR(Number(value ?? 0))}
                 />
                 <Area type="monotone" dataKey="lent" stroke="oklch(0.65 0.20 265)" strokeWidth={2} fill="url(#g2)" />
                 <Area type="monotone" dataKey="profit" stroke="oklch(0.78 0.18 158)" strokeWidth={2} fill="url(#g1)" />

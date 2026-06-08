@@ -20,12 +20,7 @@ type Msg = {
   time: string;
 };
 
-const SUGGESTIONS = [
-  "How much profit did I make this month?",
-  "Which borrowers are overdue?",
-  "How much compound interest accumulated?",
-  "Predict next month's collections",
-];
+
 
 export default function Assistant() {
   const [messages, setMessages] =

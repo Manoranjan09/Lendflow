@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+
 import {
   useState,
   useEffect,
@@ -73,7 +73,23 @@ useEffect(() => {
           >
             How it works
           </a>
-
+<Link
+  to="/user-guide"
+  className="
+    px-4 py-2
+    rounded-full
+    border border-cyan-400/40
+    text-cyan-400
+    font-semibold
+    hover:border-cyan-300
+    hover:text-white
+    hover:bg-cyan-500/10
+    hover:shadow-[0_0_20px_rgba(34,211,238,0.6)]
+    transition-all duration-300
+  "
+>
+  📘 User Guide
+</Link>
           <Link
             to="/calculator"
             className="hover:text-foreground transition"

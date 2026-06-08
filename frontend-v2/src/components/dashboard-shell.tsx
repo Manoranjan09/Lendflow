@@ -3,7 +3,7 @@ import {
   Outlet,
   useLocation,
 } from "react-router-dom";
-import { LayoutDashboard, Users, Calculator, BarChart3, Bot, Settings, Sparkles, Bell } from "lucide-react";
+import { LayoutDashboard, Users, Calculator, BarChart3, Bot, Settings,  Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";

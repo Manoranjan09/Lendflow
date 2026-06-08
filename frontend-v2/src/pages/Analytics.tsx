@@ -173,7 +173,7 @@ if (!stats) {
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.30 0.03 252 / 0.5)" />
                <XAxis dataKey="month" stroke="oklch(0.70 0.02 250)" fontSize={12} />
                 <YAxis stroke="oklch(0.70 0.02 250)" fontSize={12} tickFormatter={(v) => `${v/1000}k`} />
-                <Tooltip contentStyle={{ background: "oklch(0.20 0.03 250)", border: "1px solid oklch(0.30 0.03 252)", borderRadius: 12 }} formatter={(v: number) => fmtINR(v)} />
+                <Tooltip contentStyle={{ background: "oklch(0.20 0.03 250)", border: "1px solid oklch(0.30 0.03 252)", borderRadius: 12 }} formatter={(value) => fmtINR(Number(value ?? 0))} />
                <Area
   type="monotone"
   dataKey="recovered"
@@ -202,7 +202,7 @@ if (!stats) {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={byStatus} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={4}>
-                  {byStatus.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  {byStatus.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
               <Tooltip
   contentStyle={{
@@ -248,7 +248,7 @@ if (!stats) {
                <YAxis
   type="category"
   dataKey="borrower"stroke="oklch(0.70 0.02 250)" fontSize={12} width={110} />
-                <Tooltip contentStyle={{ background: "oklch(0.20 0.03 250)", border: "1px solid oklch(0.30 0.03 252)", borderRadius: 12 }} formatter={(v: number) => fmtINR(v)} />
+                <Tooltip contentStyle={{ background: "oklch(0.20 0.03 250)", border: "1px solid oklch(0.30 0.03 252)", borderRadius: 12 }} formatter={(value) => fmtINR(Number(value ?? 0))} />
                 <Bar dataKey="exposure" fill="oklch(0.65 0.20 265)" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>

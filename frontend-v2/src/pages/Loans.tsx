@@ -223,12 +223,10 @@ const { data: loans = [] } =
       form.get("due_date")
     );
 
-   const user = JSON.parse(
-  localStorage.getItem("user") || "{}"
-);
+
 
 createLoanMutation.mutate({
-  lender_id: user.dbUser.id,
+  
 
   borrower_id,
   principal_amount,

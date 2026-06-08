@@ -78,9 +78,9 @@ const { data: publicStats } =
     enabled: !!lenderId,
 
     queryFn: () =>
-      getPublicStats(
-        lenderId
-      ),
+  getPublicStats(
+    lenderId!
+  ),
   });
   console.log("Public Stats:", publicStats);
  const { data: insight } =
@@ -93,9 +93,9 @@ const { data: publicStats } =
     enabled: !!lenderId,
 
     queryFn: () =>
-      getLandingInsight(
-        lenderId
-      ),
+  getLandingInsight(
+    lenderId!
+  ),
   });
   const [guideOpen, setGuideOpen] =
   useState(false);
@@ -111,9 +111,9 @@ const { data: publicStats } =
     enabled: !!lenderId,
 
     queryFn: () =>
-      getMonthlyTrend(
-        lenderId
-      ),
+  getMonthlyTrend(
+    lenderId!
+  ),
   });
   return (
      <>
@@ -447,13 +447,15 @@ to loan recovery — automated.</h2>
     </Link>
   </Button>
 
-  <Button
-    variant="outline"
-    onClick={() => setGuideOpen(true)}
-    className="border-primary/20 hover:border-primary/40"
-  >
+<Button
+  asChild
+  variant="outline"
+  className="border-primary/20 hover:border-primary/40"
+>
+  <Link to="/user-guide">
     📘 User Guide
-  </Button>
+  </Link>
+</Button>
 </div>
             </div>
             <ol className="space-y-4">

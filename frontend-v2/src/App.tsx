@@ -8,7 +8,7 @@ import Analytics from "./pages/Analytics";
 import Assistant from "./pages/Assistant";
 import Calculator from "./pages/Calculator";
 import Settings from "./pages/Settings";
-
+import UserGuide from "./pages/UserGuide";
 function App() {
   return (
    <BrowserRouter>
@@ -23,6 +23,10 @@ function App() {
       <Route path="/dashboard/analytics" element={<Analytics />} />
       <Route path="/dashboard/assistant" element={<Assistant />} />
       <Route path="/dashboard/settings" element={<Settings />} />
+      <Route
+  path="/user-guide"
+  element={<UserGuide />}
+/>
     </Route>
 
     <Route path="/calculator" element={<Calculator />} />
