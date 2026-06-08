@@ -66,9 +66,19 @@ const {
   enabled: !!lenderId,
 });
   const chatMutation =
-    useMutation({
-      mutationFn: chatWithAssistant,
-    });
+  useMutation({
+    mutationFn: ({
+      message,
+      lenderId,
+    }: {
+      message: string;
+      lenderId: number;
+    }) =>
+      chatWithAssistant(
+        message,
+        lenderId
+      ),
+  });
 
   async function send(
     text: string
@@ -93,9 +103,10 @@ const {
 
     try {
       const response: any =
-        await chatMutation.mutateAsync(
-          q
-        );
+      await chatMutation.mutateAsync({
+ message: q,
+    lenderId,
+  });
 
       setMessages((m) => [
         ...m,

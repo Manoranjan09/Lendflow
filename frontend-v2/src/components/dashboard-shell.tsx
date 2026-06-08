@@ -17,6 +17,7 @@ import {
   getNotifications,
   generateReminder,
 } from "@/lib/api/dashboard";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const nav = (t: any) => [
   {
@@ -333,7 +334,33 @@ Thank you.`;
         <main className="flex-1 p-6 md:p-8">
           <Outlet />
         </main>
-        
+        {location.pathname !==
+  "/dashboard/assistant" && (
+  <Link
+    to="/dashboard/assistant"
+    className="
+      fixed
+      bottom-6
+      right-6
+      z-50
+      flex
+      h-14
+      w-14
+      items-center
+      justify-center
+      rounded-full
+      bg-gradient-to-r
+      from-primary
+      to-accent
+      text-primary-foreground
+      shadow-xl
+      hover:scale-105
+      transition
+    "
+  >
+    <MessageCircle className="h-6 w-6" />
+  </Link>
+)}
       </div>
     </div>
   );

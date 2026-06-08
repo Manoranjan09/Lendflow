@@ -530,37 +530,102 @@ to loan recovery — automated.</h2>
     </DialogHeader>
 
     <div className="space-y-6 text-sm">
-      <p>
-        CreditFlow helps manage borrowers, loans,
-        repayments, analytics, overdue accounts and AI insights.
-      </p>
+     <div className="space-y-6 text-sm leading-7">
 
-      <p>
-        CreditFlow Borrowers, Loans, Repayments,
-        Analytics, Overdue Accounts और AI Insights
-        को Manage करने में मदद करता है।
-      </p>
+  <div>
+    <h3 className="font-semibold text-primary">
+      📘 1. Getting Started
+    </h3>
 
-      <p>
-        Use the Dashboard to monitor all lending activity,
-        create loans, record repayments and generate reports.
-      </p>
+    <p>
+      After login, create borrowers and issue loans.
+    </p>
 
-      <p>
-        Dashboard से सभी Loans, Repayments,
-        Reports और Analytics को Manage करें।
-      </p>
+    <p>
+      Login करने के बाद Borrowers जोड़ें और Loans बनाएं।
+    </p>
+  </div>
 
-      <p>
-        AI Assistant can answer questions about profit,
-        recovery, risky accounts and portfolio performance.
-      </p>
+  <div>
+    <h3 className="font-semibold text-primary">
+      👥 2. Borrower Management
+    </h3>
 
-      <p>
-        AI Assistant Profit, Recovery,
-        Risky Accounts और Portfolio Analysis
-        में मदद करता है।
-      </p>
+    <ul className="ml-6 list-disc">
+      <li>Add borrower details</li>
+      <li>Phone number</li>
+      <li>Address</li>
+      <li>Borrowing history</li>
+    </ul>
+
+    <p>
+      Borrower वह व्यक्ति है जिसे Loan दिया जाता है।
+    </p>
+  </div>
+
+  <div>
+    <h3 className="font-semibold text-primary">
+      💰 3. Loan Management
+    </h3>
+
+    <ul className="ml-6 list-disc">
+      <li>Principal Amount</li>
+      <li>Interest Rate</li>
+      <li>Interest Type</li>
+      <li>Due Date</li>
+    </ul>
+  </div>
+
+  <div>
+    <h3 className="font-semibold text-primary">
+      📅 4. Repayment Tracking
+    </h3>
+
+    <p>
+      Record repayments and monitor outstanding balances.
+    </p>
+  </div>
+
+  <div>
+    <h3 className="font-semibold text-primary">
+      📊 5. Analytics Dashboard
+    </h3>
+
+    <ul className="ml-6 list-disc">
+      <li>Total Lent</li>
+      <li>Total Collected</li>
+      <li>Outstanding Balance</li>
+      <li>Overdue Loans</li>
+    </ul>
+  </div>
+
+  <div>
+    <h3 className="font-semibold text-primary">
+      🤖 6. AI Portfolio Analyst
+    </h3>
+
+    <p>
+      Ask questions like:
+    </p>
+
+    <ul className="ml-6 list-disc">
+      <li>Give me portfolio summary</li>
+      <li>Which borrowers are overdue?</li>
+      <li>How much have I collected?</li>
+    </ul>
+  </div>
+
+  <div>
+    <h3 className="font-semibold text-primary">
+      📄 7. Reports
+    </h3>
+
+    <p>
+      Export PDF and Excel reports.
+    </p>
+  </div>
+
+</div>
     </div>
 
   </DialogContent>
@@ -579,102 +644,77 @@ to loan recovery — automated.</h2>
       </DialogTitle>
     </DialogHeader>
 
-    <div className="space-y-6 text-sm leading-7">
+   <div className="space-y-6 text-sm leading-7">
 
-      <div>
-        <h3 className="font-semibold text-primary">
-          Developed By
-        </h3>
+  <div>
+    <h3 className="font-semibold text-primary">
+      🚀 What is CreditFlow AI?
+    </h3>
 
-        <p>
-          CreditFlow AI was designed and developed by
-          <strong> Manoranjan Kumar </strong>
-          as a modern AI-powered Loan &
-          Interest Management Platform.
-        </p>
-      </div>
+    <p>
+      CreditFlow AI is an AI-powered Loan &
+      Interest Management Platform for lenders,
+      financial advisors and microfinance businesses.
+    </p>
+  </div>
 
-      <div>
-        <h3 className="font-semibold text-primary">
-          Vision
-        </h3>
+  <div>
+    <h3 className="font-semibold text-primary">
+      🎯 Mission
+    </h3>
 
-        <p>
-          To simplify lending operations for individual lenders,
-          financial advisors and small finance businesses using
-          automation and artificial intelligence.
-        </p>
-      </div>
+    <p>
+      Simplify lending operations using automation,
+      analytics and AI.
+    </p>
+  </div>
 
-      <div>
-        <h3 className="font-semibold text-primary">
-          Current Features
-        </h3>
+  <div>
+    <h3 className="font-semibold text-primary">
+      ✅ Current Features
+    </h3>
 
-        <ul className="ml-6 list-disc">
-          <li>Borrower Management</li>
-          <li>Loan Creation</li>
-          <li>Interest Calculation</li>
-          <li>Repayment Tracking</li>
-          <li>Overdue Detection</li>
-          <li>AI Assistant</li>
-          <li>Analytics Dashboard</li>
-          <li>PDF Reports</li>
-          <li>Excel Export</li>
-        </ul>
-      </div>
+    <ul className="ml-6 list-disc">
+      <li>Borrower Management</li>
+      <li>Loan Management</li>
+      <li>Repayment Tracking</li>
+      <li>Analytics Dashboard</li>
+      <li>AI Portfolio Assistant</li>
+      <li>PDF Reports</li>
+      <li>Excel Export</li>
+    </ul>
+  </div>
 
-      <div>
-        <h3 className="font-semibold text-primary">
-          Upcoming Features
-        </h3>
+  <div>
+    <h3 className="font-semibold text-primary">
+      🏆 Roadmap
+    </h3>
 
-        <ul className="ml-6 list-disc">
-          <li>WhatsApp Loan Reminders</li>
-          <li>SMS Notifications</li>
-          <li>Email Reports</li>
-          <li>AI Collection Prediction</li>
-          <li>EMI Management</li>
-          <li>Multi-Lender Support</li>
-          <li>Credit Risk Scoring</li>
-          <li>Document Upload System</li>
-          <li>Cloud Backup</li>
-          <li>Mobile App</li>
-        </ul>
-      </div>
+    <ul className="ml-6 list-disc">
+      <li>WhatsApp Reminders</li>
+      <li>SMS Notifications</li>
+      <li>Email Reports</li>
+      <li>Credit Risk Scoring</li>
+      <li>EMI Management</li>
+      <li>Mobile App</li>
+    </ul>
+  </div>
 
-      <div>
-        <h3 className="font-semibold text-primary">
-          Technology Stack
-        </h3>
+ <div>
+  <h3 className="font-semibold text-primary">
+    👨‍💻 Developer
+  </h3>
 
-        <ul className="ml-6 list-disc">
-          <li>React + TypeScript</li>
-          <li>TanStack Router</li>
-          <li>FastAPI</li>
-          <li>PostgreSQL</li>
-          <li>SQLAlchemy</li>
-          <li>OpenAI AI Assistant</li>
-          <li>Recharts Analytics</li>
-        </ul>
-      </div>
+  <p>
+    Manoranjan Kumar
+    <br />
+    BE Computer Science Engineering
+    <br />
+    Generative AI | FastAPI | React | LangChain | RAG
+  </p>
+</div>
 
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-
-        <h3 className="font-semibold text-primary">
-          Future Goal
-        </h3>
-
-        <p>
-          Transform CreditFlow AI into a complete
-          digital lending ecosystem with intelligent
-          risk analysis, automated collections,
-          borrower credit scoring and AI-powered decision support.
-        </p>
-
-      </div>
-
-    </div>
+</div>
 
   </DialogContent>
 </Dialog>
